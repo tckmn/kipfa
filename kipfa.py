@@ -48,6 +48,8 @@ class Bot:
             'prefix':   (self.cmd_prefix,   Perm([212594557], [])),
             'getperm':  (self.cmd_getperm,  Perm([], [])),
             'js':       (self.cmd_js,       Perm([], [])),
+            'steno':    (self.cmd_steno,    Perm([], [])),
+            'expand':   (self.cmd_expand,   Perm([], [])),
             'restart':  (self.cmd_restart,  Perm([212594557], []))
         }
         self.uotd = getuotd()
@@ -76,6 +78,31 @@ class Bot:
 
     def cmd_js(self, msg, args):
         self.reply(msg, os.popen("""node -e 'var Sandbox = require("./node_modules/sandbox"), s = new Sandbox(); s.options.timeout = 2000; s.run("{}", function(x) {{ console.log(x.result == "TimeoutError" ? "2 second timeout reached." : x.result); }});'""".format(args.replace('\\', '\\\\').replace("'", "'\\''").replace('"', '\\"'))).read())
+
+    def cmd_steno(self, msg, args):
+        if re.fullmatch(r'S?T?K?P?W?H?R?A?O?\*?-?E?U?F?R?P?B?L?G?T?S?D?Z?', args):
+            m = re.search(r'[AO*\-EU]+', args)
+            if m:
+                dups = 'SPTR'
+                keyboard.draw_keyboard_to_png(
+                        [s+('-' if s in dups else '') for s in args[:m.start()]] +
+                        [s for s in m.group() if s != '-'] +
+                        [('-' if s in dups else '')+s for s in args[m.end():]],
+                        'tmp.png')
+                self.reply_photo(msg, 'tmp.png')
+            else:
+                self.reply(msg, 'Invalid steno.')
+        else:
+            self.reply(msg, 'Invalid steno.')
+
+    def cmd_expand(self, msg, args):
+        args = args.lower()
+        if any(not ch.islower() for ch in args):
+            self.reply(msg, 'Letters only please.')
+        elif len(args) > 10:
+            self.reply(msg, 'Maximum of 10 letters allowed.')
+        else:
+            self.reply(msg, ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args]))
 
     def cmd_restart(self, msg, args):
         self.reply(msg, 'restarting...')
@@ -111,8 +138,8 @@ class Bot:
                     os.remove(fname)
                     with sr.AudioFile('out.wav') as source:
                         audio = self.recog.record(source)
-                    self.reply(msg, self.recog.recognize_sphinx(audio))
                     os.remove('out.wav')
+                    self.reply(msg, self.recog.recognize_sphinx(audio))
 
         if not txt: return
 
@@ -130,27 +157,11 @@ class Bot:
         if matches:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
-        if re.fullmatch(r'S?T?K?P?W?H?R?A?O?\*?-?E?U?F?R?P?B?L?G?T?S?D?Z?', txt):
-            m = re.search(r'[AO*\-EU]+', txt)
-            dups = 'SPTR'
-            keyboard.draw_keyboard_to_png(
-                    [s+('-' if s in dups else '') for s in txt[:m.start()]] +
-                    [s for s in m.group() if s != '-'] +
-                    [('-' if s in dups else '')+s for s in txt[m.end():]],
-                    'tmp.png')
-            self.reply_photo(msg, 'tmp.png')
-
     def callback(self, update):
         if isinstance(update, types.Update):
             for u in update.updates: self.callback(u)
         elif isinstance(update, types.UpdateNewChannelMessage):
             msg = update.message
-            # print(msg.to_id.channel_id)
-            # if msg.to_id.channel_id in [
-            #             1032618176, # schmett
-            #             1059322065, # 0x
-            #             1224278565, # superbots
-            #         ]:
             print(msg)
             self.process_message(msg)
 
