@@ -142,6 +142,7 @@ class Bot:
                     [('-' if s in dups else '')+s for s in args[m.end():]],
                     'tmp.png')
             self.reply_photo(msg, 'tmp.png')
+            os.remove('tmp.png')
         else:
             self.reply(msg, 'Invalid steno.')
 
