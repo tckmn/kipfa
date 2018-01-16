@@ -8,6 +8,7 @@ import sys
 import time
 
 from threading import Thread
+from collections import Counter
 
 from pyrogram import Client
 from pyrogram.api import types, functions
@@ -73,29 +74,32 @@ class Bot:
         self.client = client
         self.prefix = '!'
         self.commands = {
-            'help':       (self.cmd_help,       Perm([], [])),
-            'commands':   (self.cmd_commands,   Perm([], [])),
-            'prefix':     (self.cmd_prefix,     Perm([212594557], [])),
-            'getperm':    (self.cmd_getperm,    Perm([], [])),
-            'js':         (self.cmd_js,         Perm([], [])),
-            'steno':      (self.cmd_steno,      Perm([], [])),
-            'expand':     (self.cmd_expand,     Perm([], [])),
-            'bash':       (self.cmd_bash,       Perm([], [])),
-            'uptime':     (self.cmd_uptime,     Perm([], [])),
-            'frink':      (self.cmd_frink,      Perm([], [])),
-            'transcribe': (self.cmd_transcribe, Perm([], [])),
-            #'puzzle':     (self.cmd_puzzle,     Perm([], [])),
-            'restart':    (self.cmd_restart,    Perm([212594557], []))
+            'help':        (self.cmd_help,        Perm([], [])),
+            'commands':    (self.cmd_commands,    Perm([], [])),
+            'prefix':      (self.cmd_prefix,      Perm([212594557], [])),
+            'getperm':     (self.cmd_getperm,     Perm([], [])),
+            'js':          (self.cmd_js,          Perm([], [])),
+            'steno':       (self.cmd_steno,       Perm([], [])),
+            'expand':      (self.cmd_expand,      Perm([], [])),
+            'bash':        (self.cmd_bash,        Perm([], [])),
+            'uptime':      (self.cmd_uptime,      Perm([], [])),
+            'frink':       (self.cmd_frink,       Perm([], [])),
+            'transcribe':  (self.cmd_transcribe,  Perm([], [])),
+            'puzzle':      (self.cmd_puzzle,      Perm([], [])),
+            'puzhist':     (self.cmd_puzhist,     Perm([], [])),
+            'leaderboard': (self.cmd_leaderboard, Perm([], [])),
+            'restart':     (self.cmd_restart,     Perm([212594557], []))
         }
         self.uotd = getuotd()
         self.review = getreview()
         self.bda = getbda()
         self.xkcd = getxkcd()
         self.recog = sr.Recognizer()
-        # try: self.puztime = eval(open('puztime').read())
-        # except FileNotFoundError: self.puztime = {}
-        # try: self.puzlevel = int(open('puzlevel').read())
-        # except FileNotFoundError: self.puzlevel = 1
+        try: self.puztime = eval(open('puztime').read())
+        except FileNotFoundError: self.puztime = {}
+        try: self.puzhist = eval(open('puzhist').read())
+        except FileNotFoundError: self.puzhist = []
+        self.puzlevel = len(self.puzhist) + 1
         try: self.nametoid = eval(open('nametoid').read())
         except FileNotFoundError: self.nametoid = {}
         self.idtoname = dict(reversed(x) for x in self.nametoid.items())
@@ -214,12 +218,22 @@ class Bot:
             return
         if getattr(puzzle, 'guess'+str(self.puzlevel))(args):
             self.puzlevel += 1
-            open('puzlevel', 'w').write(str(self.puzlevel))
+            self.puzhist += [msg.from_id]
+            open('puzhist', 'w').write(repr(self.puzhist))
             self.reply(msg, 'Correct! ' + self.puzdesc())
         else:
             self.puztime[msg.from_id] = time.time() + 60*60
             open('puztime', 'w').write(repr(self.puztime))
             self.reply(msg, 'Sorry, that\'s incorrect.')
+
+    def cmd_puzhist(self, msg, args):
+        self.reply(msg, 'Puzzles solved so far by: ' +
+                ', '.join(map(usernamify(self.idtoname), self.puzhist)))
+
+    def cmd_leaderboard(self, msg, args):
+        data = sorted(Counter(map(usernamify(self.idtoname), self.puzhist)).items(), key=lambda x: -x[1])
+        maxlen = max(len(x[0]) for x in data)
+        self.reply(msg, '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```')
 
     def cmd_restart(self, msg, args):
         self.reply(msg, 'restarting...')
