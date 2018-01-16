@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
+import datetime
 import os
 import re
+import subprocess
 import sys
 import time
+
+from threading import Thread
 
 from pyrogram import Client
 from pyrogram.api import types, functions
@@ -17,6 +21,8 @@ import data
 sys.path.insert(0, './steno-keyboard-generator')
 import keyboard
 
+import puzzle
+
 def xtoi(s):
     s = s[1:]
     for (x, i) in zip(data.xsIn, data.ipaOut): s = s.replace(x, i)
@@ -26,11 +32,26 @@ def getuotd():
     r = requests.get('https://lichess.org/training/daily')
     return r.text[r.text.find('og:title')+33:].split()[0]
 
+def getreview():
+    r = requests.get('https://www.sjsreview.com/?s=')
+    return BeautifulSoup(r.text, 'lxml').find('h2').find('a').attrs['href']
+
+def getbda():
+    r = requests.get('https://www.voanoticias.com/z/537')
+    return BeautifulSoup(r.text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href']
+
+def getxkcd():
+    r = requests.get('https://xkcd.com/')
+    return r.text[r.text.find('Permanent link to this comic:'):].split('<')[0].split(' ')[-1]
+
 def chat_id(msg):
     if isinstance(msg, types.Message):
         return msg.to_id.channel_id
     else:
         return msg.chat_id
+
+def usernamify(idtoname):
+    return lambda x: '@'+idtoname[x] if x in idtoname else str(x)
 
 class Perm:
 
@@ -38,8 +59,10 @@ class Perm:
         self.whitelist = whitelist
         self.blacklist = blacklist
 
-    def __str__(self):
-        return 'whitelist: {}, blacklist: {}'.format(self.whitelist, self.blacklist)
+    def fmt(self, idtoname):
+        return 'whitelist: {}, blacklist: {}'.format(
+                ', '.join(map(usernamify(idtoname), self.whitelist)) or '(none)',
+                ', '.join(map(usernamify(idtoname), self.blacklist)) or '(none)')
 
     def check(self, id):
         return (not self.whitelist or id in self.whitelist) and (id not in self.blacklist)
@@ -50,21 +73,37 @@ class Bot:
         self.client = client
         self.prefix = '!'
         self.commands = {
-            'help':     (self.cmd_help,     Perm([], [])),
-            'commands': (self.cmd_commands, Perm([], [])),
-            'prefix':   (self.cmd_prefix,   Perm([212594557], [])),
-            'getperm':  (self.cmd_getperm,  Perm([], [])),
-            'js':       (self.cmd_js,       Perm([], [])),
-            'steno':    (self.cmd_steno,    Perm([], [])),
-            'expand':   (self.cmd_expand,   Perm([], [])),
-            'bash':     (self.cmd_bash,     Perm([], [])),
-            'restart':  (self.cmd_restart,  Perm([212594557], []))
+            'help':       (self.cmd_help,       Perm([], [])),
+            'commands':   (self.cmd_commands,   Perm([], [])),
+            'prefix':     (self.cmd_prefix,     Perm([212594557], [])),
+            'getperm':    (self.cmd_getperm,    Perm([], [])),
+            'js':         (self.cmd_js,         Perm([], [])),
+            'steno':      (self.cmd_steno,      Perm([], [])),
+            'expand':     (self.cmd_expand,     Perm([], [])),
+            'bash':       (self.cmd_bash,       Perm([], [])),
+            'uptime':     (self.cmd_uptime,     Perm([], [])),
+            'frink':      (self.cmd_frink,      Perm([], [])),
+            'transcribe': (self.cmd_transcribe, Perm([], [])),
+            #'puzzle':     (self.cmd_puzzle,     Perm([], [])),
+            'restart':    (self.cmd_restart,    Perm([212594557], []))
         }
         self.uotd = getuotd()
+        self.review = getreview()
+        self.bda = getbda()
+        self.xkcd = getxkcd()
         self.recog = sr.Recognizer()
+        # try: self.puztime = eval(open('puztime').read())
+        # except FileNotFoundError: self.puztime = {}
+        # try: self.puzlevel = int(open('puzlevel').read())
+        # except FileNotFoundError: self.puzlevel = 1
+        try: self.nametoid = eval(open('nametoid').read())
+        except FileNotFoundError: self.nametoid = {}
+        self.idtoname = dict(reversed(x) for x in self.nametoid.items())
+        self.starttime = time.time()
+        self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def cmd_help(self, msg, args):
-        self.reply(msg, 'For a list of commands, type {}commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
+        self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
 
     def cmd_commands(self, msg, args):
         self.reply(msg, ', '.join(self.commands.keys()))
@@ -78,7 +117,10 @@ class Bot:
 
     def cmd_getperm(self, msg, args):
         if args in self.commands:
-            self.reply(msg, 'Permissions for command {}: {}.'.format(args, self.commands[args][1]))
+            self.reply(msg, 'Permissions for command {}: {}.'.format(
+                args,
+                self.commands[args][1].fmt(self.idtoname)
+                ))
         elif args:
             self.reply(msg, 'Unknown command {}.'.format(args))
         else:
@@ -117,43 +159,119 @@ class Bot:
         quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
         self.reply(msg, '```\n{}\n```'.format(quote))
 
+    def cmd_uptime(self, msg, args):
+        self.reply(msg, str(datetime.timedelta(seconds=int(time.time() - self.starttime))))
+
+    def cmd_frink(self, msg, args):
+        if args is None:
+            self.reply(msg, 'Please provide Frink code to run.')
+        else:
+            self.frink.stdin.write(args.encode('utf-8') + b'\n')
+            self.frink.stdin.flush()
+            r = self.frink.stdout.readline()
+            ans = b''
+            while True:
+                line = self.frink.stdout.readline()
+                if line == r: break
+                ans += line
+            self.reply(msg, ans.decode('utf-8'))
+
+    def cmd_transcribe(self, msg, args):
+        rmsg = self.get_reply(msg)
+        if rmsg is None or not hasattr(rmsg, 'media'):
+            self.reply(msg, 'Please reply to a voice message.')
+            return
+        media = rmsg.media
+        if not isinstance(media, types.MessageMediaDocument):
+            self.reply(msg, 'Please reply to a voice message.')
+            return
+        doc = media.document
+        if doc.mime_type != 'audio/ogg':
+            self.reply(msg, 'Please reply to a voice message.')
+            return
+        if doc.size > 1024 * 200:
+            self.reply(msg, 'Message too big.')
+            return
+        fname = '{}_{}_0.jpg'.format(doc.id, doc.access_hash)
+        self.client.get_file(doc.dc_id, doc.id, doc.access_hash)
+        os.system('ffmpeg -i {} out.wav'.format(fname))
+        os.remove(fname)
+        with sr.AudioFile('out.wav') as source:
+            audio = self.recog.record(source)
+        os.remove('out.wav')
+        try:
+            self.reply(msg, self.recog.recognize_sphinx(audio) or '(lambs)')
+        except sr.UnknownValueError:
+            self.reply(msg, '(error)')
+
+    def cmd_puzzle(self, msg, args):
+        if not args:
+            self.reply(msg, self.puzdesc())
+            return
+        if msg.from_id in self.puztime and self.puztime[msg.from_id] > time.time():
+            self.reply(msg, 'Max one guess per person per hour.')
+            return
+        if getattr(puzzle, 'guess'+str(self.puzlevel))(args):
+            self.puzlevel += 1
+            open('puzlevel', 'w').write(str(self.puzlevel))
+            self.reply(msg, 'Correct! ' + self.puzdesc())
+        else:
+            self.puztime[msg.from_id] = time.time() + 60*60
+            open('puztime', 'w').write(repr(self.puztime))
+            self.reply(msg, 'Sorry, that\'s incorrect.')
+
     def cmd_restart(self, msg, args):
         self.reply(msg, 'restarting...')
         self.client.stop()
         os._exit(0)
 
-    def checkuotd(self):
+    def checkwebsites(self):
         newuotd = getuotd()
         if newuotd.isdecimal() and self.uotd != newuotd:
             self.uotd = newuotd
-            client.send_message(1059322065, 'obtw new uotd')
+            self.client.send_message(1059322065, 'obtw new uotd')
+
+        newreview = getreview()
+        if newreview and self.review != newreview:
+            self.review = newreview
+            self.client.send_message(1032618176, self.review)
+
+        newbda = getbda()
+        if newbda and self.bda != newbda:
+            self.bda = newbda
+            self.client.send_message(1123178155, 'https://www.voanoticias.com'+self.bda)
+
+        newxkcd = getxkcd()
+        if newxkcd and self.xkcd != newxkcd:
+            self.xkcd = newxkcd
+            self.client.send_message(1059322065, self.xkcd)
+
+    def get_reply(self, msg):
+        if not hasattr(msg, 'reply_to_msg_id'): return None
+        return self.client.send(
+                functions.channels.GetMessages(
+                    self.client.peers_by_id[msg.to_id.channel_id],
+                    [msg.reply_to_msg_id]
+                    )
+                ).messages[0]
 
     def reply(self, msg, txt):
         print(txt)
-        client.send_message(chat_id(msg), txt, reply_to_msg_id=msg.id)
+        self.client.send_message(chat_id(msg), txt, reply_to_msg_id=msg.id)
 
     def reply_photo(self, msg, path):
         print(path)
-        client.send_photo(chat_id(msg), path#, reply_to_msg_id=msg.id)
+        self.client.send_photo(chat_id(msg), path#, reply_to_msg_id=msg.id)
+                )
+
+    def puzdesc(self):
+        return 'Level {}: {}'.format(
+                self.puzlevel,
+                getattr(puzzle, 'desc'+str(self.puzlevel))
                 )
 
     def process_message(self, msg):
         txt = msg.message
-
-        if hasattr(msg, 'media'):
-            media = msg.media
-            if isinstance(msg.media, types.MessageMediaDocument):
-                doc = media.document
-                if doc.mime_type == 'audio/ogg':
-                    fname = '{}_{}_0.jpg'.format(doc.id, doc.access_hash)
-                    client.get_file(doc.dc_id, doc.id, doc.access_hash)
-                    os.system('ffmpeg -i {} out.wav'.format(fname))
-                    os.remove(fname)
-                    with sr.AudioFile('out.wav') as source:
-                        audio = self.recog.record(source)
-                    os.remove('out.wav')
-                    self.reply(msg, self.recog.recognize_sphinx(audio))
-
         if not txt: return
 
         if txt[:len(self.prefix)] == self.prefix:
@@ -165,6 +283,22 @@ class Bot:
                     func(msg, args)
                 else:
                     self.reply(msg, 'You do not have the permission to execute that command.')
+
+        if txt == '!!debug' and msg.from_id == 212594557:
+            debug = dict(vars(self))
+            del debug['commands']
+            del debug['idtoname']
+            self.reply(msg, repr(debug))
+        elif txt == '!!updateusers' and msg.from_id == 212594557:
+            self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
+                functions.channels.GetParticipants(
+                    self.client.peers_by_id[msg.to_id.channel_id],
+                    types.ChannelParticipantsRecent(),
+                    0, 0, 0
+                    )
+                ).users))}
+            open('nametoid', 'w').write(repr(self.nametoid))
+            self.idtoname = dict(reversed(x) for x in self.nametoid.items())
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
@@ -189,6 +323,7 @@ client.start()
 while True:
     try:
         time.sleep(5 * 60)
-        bot.checkuotd()
+        thread = Thread(target=bot.checkwebsites)
+        thread.start()
     except KeyboardInterrupt:
         break
