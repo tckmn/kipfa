@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 
+from collections import Counter
+from threading import Thread
 import datetime
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
-
-from threading import Thread
-from collections import Counter
 
 from pyrogram import Client
 from pyrogram.api import types, functions
@@ -23,6 +23,13 @@ sys.path.insert(0, './steno-keyboard-generator')
 import keyboard
 
 import puzzle
+
+admin = 212594557
+class Chats:
+    apspanish = 1123178155
+    haxorz    = 1059322065
+    schmett   = 1032618176
+    testing   = 1178303268
 
 def xtoi(s):
     s = s[1:]
@@ -43,7 +50,8 @@ def getbda():
 
 def getxkcd():
     r = requests.get('https://xkcd.com/')
-    return r.text[r.text.find('Permanent link to this comic:'):].split('<')[0].split(' ')[-1]
+    img = BeautifulSoup(r.text, 'lxml').find('div', id='comic').find('img')
+    return (img.attrs['src'], img.attrs['title'])
 
 def chat_id(msg):
     if isinstance(msg, types.Message):
@@ -76,7 +84,7 @@ class Bot:
         self.commands = {
             'help':        (self.cmd_help,        Perm([], [])),
             'commands':    (self.cmd_commands,    Perm([], [])),
-            'prefix':      (self.cmd_prefix,      Perm([212594557], [])),
+            'prefix':      (self.cmd_prefix,      Perm([admin], [])),
             'getperm':     (self.cmd_getperm,     Perm([], [])),
             'js':          (self.cmd_js,          Perm([], [])),
             'steno':       (self.cmd_steno,       Perm([], [])),
@@ -88,7 +96,7 @@ class Bot:
             'puzzle':      (self.cmd_puzzle,      Perm([], [])),
             'puzhist':     (self.cmd_puzhist,     Perm([], [])),
             'leaderboard': (self.cmd_leaderboard, Perm([], [])),
-            'restart':     (self.cmd_restart,     Perm([212594557], []))
+            'restart':     (self.cmd_restart,     Perm([admin], []))
         }
         self.uotd = getuotd()
         self.review = getreview()
@@ -244,22 +252,25 @@ class Bot:
         newuotd = getuotd()
         if newuotd.isdecimal() and self.uotd != newuotd:
             self.uotd = newuotd
-            self.client.send_message(1059322065, 'obtw new uotd')
+            self.client.send_message(Chats.haxorz, 'obtw new uotd')
 
         newreview = getreview()
         if newreview and self.review != newreview:
             self.review = newreview
-            self.client.send_message(1032618176, self.review)
+            self.client.send_message(Chats.schmett, self.review)
 
         newbda = getbda()
         if newbda and self.bda != newbda:
             self.bda = newbda
-            self.client.send_message(1123178155, 'https://www.voanoticias.com'+self.bda)
+            self.client.send_message(Chats.apspanish, 'https://www.voanoticias.com'+self.bda)
 
         newxkcd = getxkcd()
-        if newxkcd and self.xkcd != newxkcd:
+        if newxkcd[0] and self.xkcd[0] != newxkcd[0]:
             self.xkcd = newxkcd
-            self.client.send_message(1059322065, self.xkcd)
+            r = requests.get('http:' + newxkcd[0], stream=True)
+            with open('xkcd.png', 'wb') as f: shutil.copyfileobj(r.raw, f)
+            self.client.send_photo(Chats.haxorz, 'xkcd.png', self.xkcd[1])
+            os.remove('xkcd.png')
 
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_msg_id'): return None
@@ -299,12 +310,12 @@ class Bot:
                 else:
                     self.reply(msg, 'You do not have the permission to execute that command.')
 
-        if txt == '!!debug' and msg.from_id == 212594557:
+        if txt == '!!debug' and msg.from_id == admin:
             debug = dict(vars(self))
             del debug['commands']
             del debug['idtoname']
             self.reply(msg, repr(debug))
-        elif txt == '!!updateusers' and msg.from_id == 212594557:
+        elif txt == '!!updateusers' and msg.from_id == admin:
             self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
                 functions.channels.GetParticipants(
                     self.client.peers_by_id[msg.to_id.channel_id],
@@ -334,6 +345,7 @@ client = Client('meemerino')
 bot = Bot(client)
 client.set_update_handler(bot.callback)
 client.start()
+client.send_message(Chats.testing, 'bot started')
 
 while True:
     try:
