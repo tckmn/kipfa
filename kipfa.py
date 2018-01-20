@@ -3,6 +3,7 @@
 from collections import Counter
 from threading import Thread
 import datetime
+import json
 import os
 import re
 import shutil
@@ -26,10 +27,11 @@ import puzzle
 
 admin = 212594557
 class Chats:
-    apspanish = 1123178155
-    haxorz    = 1059322065
-    schmett   = 1032618176
-    testing   = 1178303268
+    frink    = 1277770483
+    haxorz   = 1059322065
+    mariposa = 1053893427
+    schmett  = 1032618176
+    testing  = 1178303268
 
 def xtoi(s):
     s = s[1:]
@@ -96,6 +98,7 @@ class Bot:
             'puzzle':      (self.cmd_puzzle,      Perm([], [])),
             'puzhist':     (self.cmd_puzhist,     Perm([], [])),
             'leaderboard': (self.cmd_leaderboard, Perm([], [])),
+            'translate':   (self.cmd_translate,   Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
         self.uotd = getuotd()
@@ -243,6 +246,23 @@ class Bot:
         maxlen = max(len(x[0]) for x in data)
         self.reply(msg, '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```')
 
+    def cmd_translate(self, msg, args):
+        m = re.match(r'^([a-z-]*):', args)
+        tl = 'en'
+        if m:
+            tl = m.group(1)
+            args = args[args.find(':')+1:]
+        resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
+            'client': 'gtx',
+            'sl': 'auto',
+            'tl': tl,
+            'dt': 't',
+            'ie': 'UTF-8',
+            'oe': 'UTF-8',
+            'q': args
+            }).text)
+        self.reply(msg, '(from {}) {}'.format(resp[2], resp[0][0][0]))
+
     def cmd_restart(self, msg, args):
         self.reply(msg, 'restarting...')
         self.client.stop()
@@ -262,7 +282,7 @@ class Bot:
         newbda = getbda()
         if newbda and self.bda != newbda:
             self.bda = newbda
-            self.client.send_message(Chats.apspanish, 'https://www.voanoticias.com'+self.bda)
+            self.client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+self.bda)
 
         newxkcd = getxkcd()
         if newxkcd[0] and self.xkcd[0] != newxkcd[0]:
@@ -299,6 +319,10 @@ class Bot:
     def process_message(self, msg):
         txt = msg.message
         if not txt: return
+
+        if msg.to_id.channel_id == Chats.frink:
+            self.commands['frink'][0](msg, txt)
+            return
 
         if txt[:len(self.prefix)] == self.prefix:
             cmd, *args = txt[len(self.prefix):].split(' ', 1)
