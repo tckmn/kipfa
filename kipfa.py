@@ -161,12 +161,27 @@ class Bot:
         self.quota = '(unknown)'
 
     def cmd_help(self, msg, args):
-        self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
+        '''
+        help helps helpfully.
+        '''
+        if args is None:
+            self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
+        else:
+            if args in self.commands:
+                self.reply(msg, ' '.join(self.commands[args][0].__doc__.format(prefix=self.prefix).split()))
+            else:
+                self.reply(msg, 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix))
 
     def cmd_commands(self, msg, args):
+        '''
+        Lists all of the bot's commands.
+        '''
         self.reply(msg, ', '.join(self.commands.keys()))
 
     def cmd_prefix(self, msg, args):
+        '''
+        Changes the prefix used to run a bot command.
+        '''
         if args:
             self.prefix = args
             self.reply(msg, 'Prefix updated.')
@@ -174,6 +189,10 @@ class Bot:
             self.reply(msg, 'Please specify a prefix to set.')
 
     def cmd_getperm(self, msg, args):
+        '''
+        Displays the current permissions (whitelist and blacklist) for a given
+        command.
+        '''
         if args in self.commands:
             self.reply(msg, 'Permissions for command {}: {}.'.format(
                 args,
@@ -185,9 +204,16 @@ class Bot:
             self.reply(msg, 'Please specify a command name.')
 
     def cmd_js(self, msg, args):
+        '''
+        Executes (sandboxed) JavaScript code and returns the value of the last
+        expression.
+        '''
         self.reply(msg, os.popen("""node -e 'var Sandbox = require("./node_modules/sandbox"), s = new Sandbox(); s.options.timeout = 2000; s.run("{}", function(x) {{ console.log(x.result == "TimeoutError" ? "2 second timeout reached." : x.result); }});'""".format(args.replace('\\', '\\\\').replace("'", "'\\''").replace('"', '\\"'))).read())
 
     def cmd_steno(self, msg, args):
+        '''
+        Displays the given chord on a steno keyboard.
+        '''
         if args is None:
             self.reply(msg, 'Please specify a steno string.')
             return
@@ -205,6 +231,10 @@ class Bot:
             self.reply(msg, 'Invalid steno.')
 
     def cmd_expand(self, msg, args):
+        '''
+        Randomly expands an acronym, e.g. {prefix}expand mfw => mole fluently
+        whimpers.
+        '''
         args = args.lower()
         if any(not ch.islower() for ch in args):
             self.reply(msg, 'Letters only please.')
@@ -214,14 +244,23 @@ class Bot:
             self.reply(msg, ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args]))
 
     def cmd_bash(self, msg, args):
+        '''
+        Gives the highest voted out of 50 random bash.org quotes.
+        '''
         # quote = BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find('p', class_='qt').text
         quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
         self.reply(msg, '```\n{}\n```'.format(quote))
 
     def cmd_uptime(self, msg, args):
+        '''
+        Tells how long the bot has been running since its last restart.
+        '''
         self.reply(msg, str(datetime.timedelta(seconds=int(time.time() - self.starttime))))
 
     def cmd_frink(self, msg, args):
+        '''
+        Executes Frink code (https://frinklang.org/).
+        '''
         if args is None:
             self.reply(msg, 'Please provide Frink code to run.')
         else:
@@ -236,6 +275,9 @@ class Bot:
             self.reply(msg, ans.decode('utf-8'))
 
     def cmd_transcribe(self, msg, args):
+        '''
+        Transcribes voice messages into text (very poorly) with PocketSphinx.
+        '''
         rmsg = self.get_reply(msg)
         if rmsg is None or not hasattr(rmsg, 'media'):
             self.reply(msg, 'Please reply to a voice message.')
@@ -264,6 +306,13 @@ class Bot:
             self.reply(msg, '(error)')
 
     def cmd_puzzle(self, msg, args):
+        '''
+        Puzzles! See the current puzzle by using this command; you can make one
+        guess per hour with {prefix}puzzle [guess]. The puzzles won't require
+        any in-depth domain-specific knowledge (but use of the internet is
+        encouraged and sometimes required). See also: {prefix}puzhist,
+        {prefix}leaderboard.
+        '''
         if not args:
             self.reply(msg, self.puzdesc())
             return
@@ -281,15 +330,27 @@ class Bot:
             self.reply(msg, 'Sorry, that\'s incorrect.')
 
     def cmd_puzhist(self, msg, args):
+        '''
+        Returns the list of people in order who have solved the puzzles from
+        the {prefix}puzzle command so far.
+        '''
         self.reply(msg, 'Puzzles solved so far by: ' +
                 ', '.join(map(usernamify(self.idtoname), self.puzhist)))
 
     def cmd_leaderboard(self, msg, args):
+        '''
+        Generates a sorted leaderboard of how many puzzles from the
+        {prefix}puzzle command each person has solved.
+        '''
         data = sorted(Counter(map(usernamify(self.idtoname), self.puzhist)).items(), key=lambda x: -x[1])
         maxlen = max(len(x[0]) for x in data)
         self.reply(msg, '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```')
 
     def cmd_translate(self, msg, args):
+        '''
+        Translates its argument into English by default; to translate into
+        another language, use e.g. {prefix}translate es: This is Spanish.
+        '''
         m = re.match(r'^([a-z-]*):', args)
         tl = 'en'
         if m:
@@ -299,6 +360,13 @@ class Bot:
         self.reply(msg, '(from {}) {}'.format(langs[sl], res))
 
     def cmd_flipflop(self, msg, args):
+        '''
+        Translates from English to another language and back repeatedly until
+        reaching a fixed point. Specify a language with e.g. {prefix}flipflop
+        ja: A towel is about the most massively useful thing an interstellar
+        hitchhiker can have. If no language is specified, a random one will be
+        chosen.
+        '''
         m = re.match(r'^([a-z-]*):', args)
         hist = []
         tl = random.choice(list(langs.keys()))
@@ -326,6 +394,11 @@ class Bot:
         self.reply(msg, '\n'.join(hist))
 
     def cmd_soguess(self, msg, args):
+        '''
+        Run this command once to get a code snippet from a random answer on
+        Stack Overflow. Then guess the tags of the question and run it again to
+        see if you were right.
+        '''
         if self.soguess is None:
             data = json.loads(requests.get('https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('.format(random.randint(100, 1000))).text)
             for item in sorted(data['items'], key=lambda x: -x['score']):
@@ -344,6 +417,9 @@ class Bot:
             self.soguess = None
 
     def cmd_restart(self, msg, args):
+        '''
+        Restarts the bot.
+        '''
         self.reply(msg, 'restarting...')
         self.client.stop()
         os._exit(0)
