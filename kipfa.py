@@ -5,6 +5,7 @@ from threading import Thread
 import datetime
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -64,6 +65,44 @@ def chat_id(msg):
 def usernamify(idtoname):
     return lambda x: '@'+idtoname[x] if x in idtoname else str(x)
 
+langs = {
+'af': 'Afrikaans', 'sq': 'Albanian', 'am': 'Amharic', 'ar': 'Arabic', 'hy':
+'Armenian', 'az': 'Azeerbaijani', 'eu': 'Basque', 'be': 'Belarusian', 'bn':
+'Bengali', 'bs': 'Bosnian', 'bg': 'Bulgarian', 'ca': 'Catalan', 'ceb':
+'Cebuano', 'zh-CN': 'Chinese (Simplified)', 'zh-TW': 'Chinese (Traditional)',
+'co': 'Corsican', 'hr': 'Croatian', 'cs': 'Czech', 'da': 'Danish', 'nl':
+'Dutch', 'en': 'English', 'eo': 'Esperanto', 'et': 'Estonian', 'fi': 'Finnish',
+'fr': 'French', 'fy': 'Frisian', 'gl': 'Galician', 'ka': 'Georgian', 'de':
+'German', 'el': 'Greek', 'gu': 'Gujarati', 'ht': 'Haitian Creole', 'ha':
+'Hausa', 'haw': 'Hawaiian', 'iw': 'Hebrew', 'hi': 'Hindi', 'hmn': 'Hmong',
+'hu': 'Hungarian', 'is': 'Icelandic', 'ig': 'Igbo', 'id': 'Indonesian', 'ga':
+'Irish', 'it': 'Italian', 'ja': 'Japanese', 'jw': 'Javanese', 'kn': 'Kannada',
+'kk': 'Kazakh', 'km': 'Khmer', 'ko': 'Korean', 'ku': 'Kurdish', 'ky': 'Kyrgyz',
+'lo': 'Lao', 'la': 'Latin', 'lv': 'Latvian', 'lt': 'Lithuanian', 'lb':
+'Luxembourgish', 'mk': 'Macedonian', 'mg': 'Malagasy', 'ms': 'Malay', 'ml':
+'Malayalam', 'mt': 'Maltese', 'mi': 'Maori', 'mr': 'Marathi', 'mn':
+'Mongolian', 'my': 'Myanmar', 'ne': 'Nepali', 'no': 'Norwegian', 'ny':
+'Nyanja', 'ps': 'Pashto', 'fa': 'Persian', 'pl': 'Polish', 'pt': 'Portuguese',
+'pa': 'Punjabi', 'ro': 'Romanian', 'ru': 'Russian', 'sm': 'Samoan', 'gd':
+'Scots Gaelic', 'sr': 'Serbian', 'st': 'Sesotho', 'sn': 'Shona', 'sd':
+'Sindhi', 'si': 'Sinhala', 'sk': 'Slovak', 'sl': 'Slovenian', 'so': 'Somali',
+'es': 'Spanish', 'su': 'Sundanese', 'sw': 'Swahili', 'sv': 'Swedish', 'tl':
+'Tagalog', 'tg': 'Tajik', 'ta': 'Tamil', 'te': 'Telugu', 'th': 'Thai', 'tr':
+'Turkish', 'uk': 'Ukrainian', 'ur': 'Urdu', 'uz': 'Uzbek', 'vi': 'Vietnamese',
+'cy': 'Welsh', 'xh': 'Xhosa', 'yi': 'Yiddish', 'yo': 'Yoruba', 'zu': 'Zulu'
+}
+def translate(text, tl):
+    resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
+        'client': 'gtx',
+        'sl': 'auto',
+        'tl': tl,
+        'dt': 't',
+        'ie': 'UTF-8',
+        'oe': 'UTF-8',
+        'q': text
+        }).text)
+    return (resp[0][0][0], resp[2])
+
 class Perm:
 
     def __init__(self, whitelist, blacklist):
@@ -99,6 +138,8 @@ class Bot:
             'puzhist':     (self.cmd_puzhist,     Perm([], [])),
             'leaderboard': (self.cmd_leaderboard, Perm([], [])),
             'translate':   (self.cmd_translate,   Perm([], [])),
+            'flipflop':    (self.cmd_flipflop,    Perm([], [])),
+            'soguess':     (self.cmd_soguess,     Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
         self.uotd = getuotd()
@@ -116,6 +157,8 @@ class Bot:
         self.idtoname = dict(reversed(x) for x in self.nametoid.items())
         self.starttime = time.time()
         self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.soguess = None
+        self.quota = '(unknown)'
 
     def cmd_help(self, msg, args):
         self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
@@ -252,16 +295,53 @@ class Bot:
         if m:
             tl = m.group(1)
             args = args[args.find(':')+1:]
-        resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
-            'client': 'gtx',
-            'sl': 'auto',
-            'tl': tl,
-            'dt': 't',
-            'ie': 'UTF-8',
-            'oe': 'UTF-8',
-            'q': args
-            }).text)
-        self.reply(msg, '(from {}) {}'.format(resp[2], resp[0][0][0]))
+        (res, sl) = translate(args, tl)
+        self.reply(msg, '(from {}) {}'.format(langs[sl], res))
+
+    def cmd_flipflop(self, msg, args):
+        m = re.match(r'^([a-z-]*):', args)
+        hist = []
+        tl = random.choice(list(langs.keys()))
+        if m:
+            tl = m.group(1)
+            args = args[args.find(':')+1:].strip()
+        else:
+            hist += ['(chose '+langs[tl]+')']
+        if len(args) > 100:
+            self.reply(msg, "That's too long. Try something shorter please.")
+            return
+        hist += [args]
+        while 1:
+            (res, sl) = translate(args, tl)
+            if res in hist:
+                hist += [res]
+                break
+            hist += [res]
+            (res2, sl2) = translate(res, 'en')
+            if res2 in hist:
+                hist += [res2]
+                break
+            hist += [res2]
+            args = res2
+        self.reply(msg, '\n'.join(hist))
+
+    def cmd_soguess(self, msg, args):
+        if self.soguess is None:
+            data = json.loads(requests.get('https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('.format(random.randint(100, 1000))).text)
+            for item in sorted(data['items'], key=lambda x: -x['score']):
+                pre = BeautifulSoup(item['body'], 'html.parser').find('pre')
+                if pre is not None and 10 < len(pre.text) < 500:
+                    self.reply(msg, 'Guess a tag!\n```\n' + pre.text + '```')
+                    qdata = json.loads(requests.get('https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('.format(item['question_id'])).text)
+                    self.soguess = qdata['items'][0]['tags']
+                    self.quota = qdata['quota_remaining']
+                    break
+            else:
+                # somehow no answers matched the criteria
+                self.reply(msg, 'Something went horribly wrong')
+        else:
+            self.reply(msg, 'The correct tags were: ' + ', '.join(self.soguess))
+            self.soguess = None
 
     def cmd_restart(self, msg, args):
         self.reply(msg, 'restarting...')
@@ -349,6 +429,9 @@ class Bot:
                 ).users))}
             open('nametoid', 'w').write(repr(self.nametoid))
             self.idtoname = dict(reversed(x) for x in self.nametoid.items())
+            self.reply(msg, 'updated {} users'.format(len(self.nametoid)))
+        elif txt == '!!quota' and msg.from_id == admin:
+            self.reply(msg, str(self.quota))
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
