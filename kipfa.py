@@ -354,6 +354,9 @@ class Bot:
         if matches:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
+        if re.match(r'\bwhere (are|r) (you|u|y\'?all)\b', txt.lower()):
+            self.reply(msg, 'NUMBERS NIGHT CLUB')
+
     def callback(self, update):
         if isinstance(update, types.Update):
             for u in update.updates: self.callback(u)
