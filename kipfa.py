@@ -31,6 +31,7 @@ class Chats:
     frink    = 1277770483
     haxorz   = 1059322065
     mariposa = 1053893427
+    ppnt     = 1232971188
     schmett  = 1032618176
     testing  = 1178303268
 
@@ -55,6 +56,10 @@ def getxkcd():
     r = requests.get('https://xkcd.com/')
     img = BeautifulSoup(r.text, 'lxml').find('div', id='comic').find('img')
     return (img.attrs['src'], img.attrs['title'])
+
+def getkernel():
+    r = requests.get('https://kernel.org/')
+    return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
 
 def chat_id(msg):
     if isinstance(msg, types.Message):
@@ -146,6 +151,7 @@ class Bot:
         self.review = getreview()
         self.bda = getbda()
         self.xkcd = getxkcd()
+        self.kernel = getkernel()
         self.recog = sr.Recognizer()
         try: self.puztime = eval(open('puztime').read())
         except FileNotFoundError: self.puztime = {}
@@ -162,7 +168,7 @@ class Bot:
 
     def cmd_help(self, msg, args):
         '''
-        help helps helpfully.
+        help helps helpfully, a helper helping helpees.
         '''
         if args is None:
             self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
@@ -448,6 +454,11 @@ class Bot:
             self.client.send_photo(Chats.haxorz, 'xkcd.png', self.xkcd[1])
             os.remove('xkcd.png')
 
+        newkernel = getkernel()
+        if newkernel and self.kernel != newkernel:
+            self.kernel = newkernel
+            self.client.send_message(Chats.haxorz, 'kernel '+self.kernel+' released')
+
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_msg_id'): return None
         return self.client.send(
@@ -515,6 +526,9 @@ class Bot:
 
         if re.match(r'\bwhere (are|r) (you|u|y\'?all)\b', txt.lower()):
             self.reply(msg, 'NUMBERS NIGHT CLUB')
+
+        if re.match(r'mountain|\brock|cluster', txt.lower()):
+            self.reply(msg, random.choice(['aftershock','airlock','air lock','air sock','alarm clock','antiknock','arawak','around the clock','atomic clock','authorized stock','baby talk','bach','balk','ballcock','ball cock','bangkok','bedrock','biological clock','bloc','block','boardwalk','bock','brock','building block','calk','capital stock','catwalk','caudal block','caulk','chalk','chalk talk','chicken hawk','chock','chopping block','cinder block','clock','combination lock','common stock','control stock','crock','crosstalk','crosswalk','cuckoo clock','cylinder block','deadlock','doc','dock','double talk','dry dock','eastern hemlock','electric shock','electroshock','engine block','en bloc','fish hawk','flintlock','floating dock','floc','flock','french chalk','frock','gamecock','gawk','goshawk','grandfather clock','gridlock','growth stock','hammerlock','hawk','haycock','heart block','hemlock','hoc','hock','hollyhock','insulin shock','interlock','iraq','jaywalk','jock','johann sebastian bach','john hancock','john locke','kapok','knock','lady\'s smock','laughingstock','letter stock','line block','livestock','loch','lock','locke','manioc','maroc','marsh hawk','matchlock','medoc','mental block','mock','mohawk','mosquito hawk','nighthawk','nock','o\'clock','oarlock','office block','out of wedlock','overstock','padauk','padlock','peacock','penny stock','pigeon hawk','pillow block','pock','poison hemlock','poppycock','post hoc','preferred stock','restock','roadblock','roc','rock','rolling stock','round the clock','sales talk','sauk','schlock','scotch woodcock','shamrock','shell shock','sherlock','shock','sidewalk','sleepwalk','small talk','smock','snatch block','sock','space walk','sparrow hawk','squawk','stalk','starting block','stock','stumbling block','sweet talk','table talk','take stock','talk','time clock','tomahawk','tower block','treasury stock','turkey cock','unblock','undock','unfrock','unlock','vapor lock','voting stock','walk','war hawk','watered stock','water clock','water hemlock','wedlock','wheel lock','widow\'s walk','wind sock','wok','woodcock','writer\'s block','yellow dock']) + ' ' + random.choice(['adjuster','adjuster','adjustor','blockbuster','bluster','buster','cluster','combustor','custard','duster','filibuster','fluster','ghosebuster','ghostbuster','just her','knuckle duster','lackluster','luster','lustre','mustard','muster','thruster','trust her']))
 
     def callback(self, update):
         if isinstance(update, types.Update):
