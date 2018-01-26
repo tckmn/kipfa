@@ -42,7 +42,7 @@ def xtoi(s):
 
 def getuotd():
     r = requests.get('https://lichess.org/training/daily')
-    return r.text[r.text.find('og:title')+33:].split()[0]
+    return re.search(r'"puzzle":.*?"fen":"([^"]+)', r.text).group(1)
 
 def getreview():
     r = requests.get('https://www.sjsreview.com/?s=')
@@ -434,7 +434,7 @@ class Bot:
         newuotd = getuotd()
         if newuotd.isdecimal() and self.uotd != newuotd:
             self.uotd = newuotd
-            self.client.send_message(Chats.haxorz, 'obtw new uotd')
+            self.client.send_message(Chats.haxorz, 'obtw new uotd\n```\n'+re.sub(r'!', lambda x: '▓░'[x.start()%2], re.sub(r'\d', lambda n: '!'*int(n.group()), self.uotd.split()[0].translate(str.maketrans('kqrbnpKQRBNP/','♔♕♖♗♘♙♚♛♜♝♞♟\n'))))+'\n```')
 
         newreview = getreview()
         if newreview and self.review != newreview:
