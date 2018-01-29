@@ -432,7 +432,7 @@ class Bot:
 
     def checkwebsites(self):
         newuotd = getuotd()
-        if newuotd.isdecimal() and self.uotd != newuotd:
+        if newuotd and self.uotd != newuotd:
             self.uotd = newuotd
             self.client.send_message(Chats.haxorz, 'obtw new uotd\n```\n'+re.sub(r'!', lambda x: '▓░'[x.start()%2], re.sub(r'\d', lambda n: '!'*int(n.group()), self.uotd.split()[0].translate(str.maketrans('kqrbnpKQRBNP/','♔♕♖♗♘♙♚♛♜♝♞♟\n'))))+'\n```')
 
