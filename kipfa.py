@@ -242,7 +242,7 @@ class Bot:
         whimpers.
         '''
         args = args.lower()
-        if any(not ch.islower() for ch in args):
+        if any(not ('a' <= ch <= 'z') for ch in args):
             self.reply(msg, 'Letters only please.')
         elif len(args) > 10:
             self.reply(msg, 'Maximum of 10 letters allowed.')
