@@ -34,6 +34,7 @@ class Chats:
     ppnt     = 1232971188
     schmett  = 1032618176
     testing  = 1178303268
+    duolingo = 1105416173
 
 def xtoi(s):
     s = s[1:]
@@ -165,6 +166,7 @@ class Bot:
         self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.soguess = None
         self.quota = '(unknown)'
+        self.dailied = False
 
     def cmd_help(self, msg, args):
         '''
@@ -541,16 +543,32 @@ class Bot:
             print(update)
             self.process_message(update)
 
+    def daily(self):
+        text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736719].strip()
+        self.client.send_message(Chats.schmett, text)
+        self.client.send_message(Chats.haxorz, text)
+        self.client.send_message(Chats.duolingo, text)
+
 client = Client('meemerino')
 bot = Bot(client)
 client.set_update_handler(bot.callback)
 client.start()
 client.send_message(Chats.testing, 'bot started')
 
+tick = 0
 while True:
+    tick += 1
     try:
-        time.sleep(5 * 60)
-        thread = Thread(target=bot.checkwebsites)
-        thread.start()
+        time.sleep(1)
+        lt = time.localtime()
+        if lt.tm_hour == 20 and lt.tm_min == 0:
+            if not bot.dailied:
+                bot.daily()
+                bot.dailied = True
+        else:
+            bot.dailied = False
+        if tick % 300 == 0:
+            thread = Thread(target=bot.checkwebsites)
+            thread.start()
     except KeyboardInterrupt:
         break
