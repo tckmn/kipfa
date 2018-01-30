@@ -526,6 +526,12 @@ class Bot:
         if matches:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
+        if txt[0] == '$' and txt[-1] == '$' and len(txt) > 2:
+            r = requests.get('https://latex.codecogs.com/png.latex?'+txt[1:-1], stream=True)
+            with open('tex.png', 'wb') as f: shutil.copyfileobj(r.raw, f)
+            self.reply_photo(msg, 'tex.png')
+            os.remove('tex.png')
+
         if re.search(r'\bwhere (are|r) (you|u|y\'?all)\b', txt.lower()):
             self.reply(msg, 'NUMBERS NIGHT CLUB')
 
