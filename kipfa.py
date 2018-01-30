@@ -532,7 +532,7 @@ class Bot:
             self.reply_photo(msg, 'tex.png')
             os.remove('tex.png')
 
-        if re.search(r'\bwhere (are|r) (you|u|y\'?all)\b', txt.lower()):
+        if re.search(r'\bwhere (are|r) (you|u|y\'?all)\b|\bwhere (you|u|y\'?all) at\b', txt.lower()):
             self.reply(msg, 'NUMBERS NIGHT CLUB')
 
         if re.search(r'mountain|\brock|cluster', txt.lower()):
