@@ -145,6 +145,7 @@ class Bot:
             'leaderboard': (self.cmd_leaderboard, Perm([], [])),
             'translate':   (self.cmd_translate,   Perm([], [])),
             'flipflop':    (self.cmd_flipflop,    Perm([], [])),
+            'flepflap':    (self.cmd_flepflap,    Perm([], [])),
             'soguess':     (self.cmd_soguess,     Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
@@ -397,6 +398,36 @@ class Bot:
             if res2 in hist:
                 hist += [res2]
                 break
+            hist += [res2]
+            args = res2
+        self.reply(msg, '\n'.join(hist))
+
+    def cmd_flepflap(self, msg, args):
+        '''
+        Translates repeatedly from English to different languages and back for
+        a fixed number of iterations. Specify a list of languages with e.g.
+        {prefix}flepflap ja es ko: (message), or a number of iterations with
+        {prefix}flepflap 3: (message). If neither a list nor a number is given,
+        5 iterations will be used by default.
+        '''
+        m = re.match(r'([0-9a-z- ]*):', args)
+        hist = []
+        if m is None: m = '5'
+        else:
+            m = m.group(1)
+            args = args[args.find(':')+1:].strip()
+        tls = [tl for x in m.split() for tl in (random.sample(list(langs.keys()), int(x)) if x.isdigit() else [x])]
+        if len(tls) > 8:
+            self.reply(msg, "That's too many languages. You may provide a maximum of 8.")
+            return
+        if len(args) > 100:
+            self.reply(msg, "That's too long. Try something shorter please.")
+            return
+        hist += [args]
+        for tl in tls:
+            (res, sl) = translate(args, tl)
+            hist += ['[{}] {}'.format(tl, res)]
+            (res2, sl2) = translate(res, 'en')
             hist += [res2]
             args = res2
         self.reply(msg, '\n'.join(hist))
