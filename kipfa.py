@@ -41,6 +41,14 @@ def xtoi(s):
     for (x, i) in zip(data.xsIn, data.ipaOut): s = s.replace(x, i)
     return s
 
+def ordinal(n):
+    return '{}{}'.format(n,
+            'th' if n//10 % 10 != 0 else
+            'st' if n % 10 == 1 else
+            'nd' if n % 10 == 2 else
+            'rd' if n % 10 == 3 else
+            'th')
+
 def getuotd():
     r = requests.get('https://lichess.org/training/daily')
     return re.search(r'"puzzle":.*?"fen":"([^"]+)', r.text).group(1)
@@ -517,6 +525,14 @@ class Bot:
                 )
 
     def process_message(self, msg):
+        self.client.forward_messages(Chats.ppnt, msg.to_id.channel_id, [msg.id])
+        sid = str(msg.id)
+        if len(str(msg.id)) > 4 and ( \
+                len(set(sid)) == 1 or \
+                list(map(abs, set(map(lambda x: int(x[1])-int(x[0]), zip(sid,sid[1:]))))) == [1] or \
+                msg.id % 10000 == 0):
+            self.reply(msg, '{} message hype'.format(ordinal(msg.id)))
+
         txt = msg.message
         if not txt: return
 
@@ -576,6 +592,10 @@ class Bot:
             msg = update.message
             print(msg)
             self.process_message(msg)
+        elif isinstance(update, types.UpdateEditChannelMessage):
+            msg = update.message
+            print(msg)
+            self.client.forward_messages(Chats.ppnt, msg.to_id.channel_id, [msg.id])
         elif isinstance(update, types.UpdateShortChatMessage):
             print(update)
             self.process_message(update)
