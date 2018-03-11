@@ -568,6 +568,8 @@ class Bot:
             self.reply(msg, 'updated {} users'.format(len(self.nametoid)))
         elif txt == '!!quota' and msg.from_id == admin:
             self.reply(msg, str(self.quota))
+        elif txt == '!!daily' and msg.from_id == admin:
+            self.daily()
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
