@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 from pyrogram import Client
 from pyrogram.api import types, functions
@@ -49,6 +50,21 @@ def ordinal(n):
             'rd' if n % 10 == 3 else
             'th')
 
+def getfeed(feed):
+    print('getfeed({})'.format(feed))
+    text = requests.get(feed).text
+    if feed == 'http://www.archr.org/atom.xml':
+        text = text.replace(' & ', ' &amp; ')
+    text = re.sub(r' xmlns="[^"]+"', '', text)
+    return ET.fromstring(text)
+
+def guids(url):
+    feed = getfeed(url)
+    if feed.tag == 'rss':
+        return [x.find('guid').text for x in feed[0].findall('item')]
+    else:
+        return [x.find('id').text for x in feed.findall('entry')]
+
 def getuotd():
     r = requests.get('https://lichess.org/training/daily')
     return re.search(r'"puzzle":.*?"fen":"([^"]+)', r.text).group(1)
@@ -60,11 +76,6 @@ def getreview():
 def getbda():
     r = requests.get('https://www.voanoticias.com/z/537')
     return BeautifulSoup(r.text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href']
-
-def getxkcd():
-    r = requests.get('https://xkcd.com/')
-    img = BeautifulSoup(r.text, 'lxml').find('div', id='comic').find('img')
-    return (img.attrs['src'], img.attrs['title'])
 
 def getkernel():
     r = requests.get('https://kernel.org/')
@@ -136,6 +147,7 @@ class Bot:
     def __init__(self, client):
         self.client = client
         self.prefix = '!'
+
         self.commands = {
             'help':        (self.cmd_help,        Perm([], [])),
             'commands':    (self.cmd_commands,    Perm([], [])),
@@ -157,24 +169,48 @@ class Bot:
             'soguess':     (self.cmd_soguess,     Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
+
+        self.feeds = dict([x, guids(x)] for x in [
+            'http://xkcd.com/rss.xml',
+            'http://what-if.xkcd.com/feed.atom',
+            'http://www.smbc-comics.com/rss.php',
+            'http://feeds.feedburner.com/PoorlyDrawnLines?format=xml',
+            'http://www.commitstrip.com/en/feed/',
+            'https://mathwithbaddrawings.com/feed/',
+            'http://feeds.feedburner.com/InvisibleBread',
+            'http://www.archr.org/atom.xml',
+            'http://existentialcomics.com/rss.xml',
+            'http://feeds.feedburner.com/codinghorror?format=xml',
+            'http://thecodelesscode.com/rss',
+            'https://lichess.org/blog.atom',
+            'http://keyboardfire.com/blog.xml'
+            ])
+
         self.uotd = getuotd()
         self.review = getreview()
         self.bda = getbda()
-        self.xkcd = getxkcd()
         self.kernel = getkernel()
+
         self.recog = sr.Recognizer()
+
         try: self.puztime = eval(open('puztime').read())
         except FileNotFoundError: self.puztime = {}
         try: self.puzhist = eval(open('puzhist').read())
         except FileNotFoundError: self.puzhist = []
         self.puzlevel = len(self.puzhist) + 1
+
         try: self.nametoid = eval(open('nametoid').read())
         except FileNotFoundError: self.nametoid = {}
         self.idtoname = dict(reversed(x) for x in self.nametoid.items())
+
         self.starttime = time.time()
-        self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(),
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
         self.soguess = None
         self.quota = '(unknown)'
+
         self.dailied = False
 
     def cmd_help(self, msg, args):
@@ -472,6 +508,20 @@ class Bot:
         os._exit(0)
 
     def checkwebsites(self):
+        for url in self.feeds:
+            feed = getfeed(url)
+            if feed.tag == 'rss':
+                for item in feed[0].findall('item'):
+                    guid = item.find('guid').text
+                    if guid not in self.feeds[url]:
+                        self.client.send_message(Chats.haxorz, item.find('link').text)
+                        self.feeds[url].append(guid)
+            else:
+                for item in feed.findall('entry'):
+                    guid = item.find('id').text
+                    if guid not in self.feeds[url]:
+                        self.client.send_message(Chats.haxorz, item.find('link').attrib['href'])
+
         newuotd = getuotd()
         if newuotd and self.uotd != newuotd:
             self.uotd = newuotd
@@ -486,14 +536,6 @@ class Bot:
         if newbda and self.bda != newbda:
             self.bda = newbda
             self.client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+self.bda)
-
-        newxkcd = getxkcd()
-        if newxkcd[0] and self.xkcd[0] != newxkcd[0]:
-            self.xkcd = newxkcd
-            r = requests.get('http:' + newxkcd[0], stream=True)
-            with open('xkcd.png', 'wb') as f: shutil.copyfileobj(r.raw, f)
-            self.client.send_photo(Chats.haxorz, 'xkcd.png', self.xkcd[1])
-            os.remove('xkcd.png')
 
         newkernel = getkernel()
         if newkernel and self.kernel != newkernel:
@@ -551,10 +593,7 @@ class Bot:
                     self.reply(msg, 'You do not have the permission to execute that command.')
 
         if txt == '!!debug' and msg.from_id == admin:
-            debug = dict(vars(self))
-            del debug['commands']
-            del debug['idtoname']
-            self.reply(msg, repr(debug))
+            print(repr(vars(self)))
         elif txt == '!!updateusers' and msg.from_id == admin:
             self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
                 functions.channels.GetParticipants(
