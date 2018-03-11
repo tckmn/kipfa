@@ -603,7 +603,7 @@ class Bot:
             self.process_message(update)
 
     def daily(self):
-        text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736719].strip()
+        text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
         self.client.send_message(Chats.schmett, text)
         self.client.send_message(Chats.haxorz, text)
         self.client.send_message(Chats.duolingo, text)
