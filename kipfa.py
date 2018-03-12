@@ -19,6 +19,7 @@ from pyrogram.api import types, functions
 import speech_recognition as sr
 
 import requests
+import urllib
 from bs4 import BeautifulSoup
 
 import data
@@ -167,6 +168,7 @@ class Bot:
             'flipflop':    (self.cmd_flipflop,    Perm([], [])),
             'flepflap':    (self.cmd_flepflap,    Perm([], [])),
             'soguess':     (self.cmd_soguess,     Perm([], [])),
+            'ddg':         (self.cmd_ddg,         Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
 
@@ -498,6 +500,19 @@ class Bot:
         else:
             self.reply(msg, 'The correct tags were: ' + ', '.join(self.soguess))
             self.soguess = None
+
+    def cmd_ddg(self, msg, args):
+        '''
+        Returns a link to the first search result on DuckDuckGo for a given
+        query.
+        '''
+        if args is None:
+            self.reply(msg, 'Please provide a search query.')
+            return
+        url = 'https://duckduckgo.com/html/?q=' + urllib.parse.quote(args)
+        res = BeautifulSoup(requests.get(url).text, 'lxml').find('div', class_='web-result')
+        link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
+        self.reply(msg, link if link else 'No results.')
 
     def cmd_restart(self, msg, args):
         '''
