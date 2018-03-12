@@ -521,6 +521,7 @@ class Bot:
                     guid = item.find('id').text
                     if guid not in self.feeds[url]:
                         self.client.send_message(Chats.haxorz, item.find('link').attrib['href'])
+                        self.feeds[url].append(guid)
 
         newuotd = getuotd()
         if newuotd and self.uotd != newuotd:
