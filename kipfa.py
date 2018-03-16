@@ -169,6 +169,7 @@ class Bot:
             'flepflap':    (self.cmd_flepflap,    Perm([], [])),
             'soguess':     (self.cmd_soguess,     Perm([], [])),
             'ddg':         (self.cmd_ddg,         Perm([], [])),
+            'wpm':         (self.cmd_wpm,         Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
 
@@ -212,6 +213,8 @@ class Bot:
 
         self.soguess = None
         self.quota = '(unknown)'
+
+        self.wpm = dict()
 
         self.dailied = False
 
@@ -514,6 +517,22 @@ class Bot:
         link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
         self.reply(msg, link if link else 'No results.')
 
+    def cmd_wpm(self, msg, args):
+        '''
+        Calculates the WPM starting from when you run this command to the
+        moment you send the last message before running the command again.
+        '''
+        uid = msg.from_id
+        if uid in self.wpm:
+            (start, end, n) = self.wpm[uid]
+            del self.wpm[uid]
+            if start == end:
+                self.reply(msg, "Please type for longer than a second.")
+                return
+            self.reply(msg, '{:.3f} WPM'.format(n / ((end - start) / 60.0) / 5))
+        else:
+            self.wpm[uid] = (msg.date, msg.date, 0)
+
     def cmd_restart(self, msg, args):
         '''
         Restarts the bot.
@@ -607,6 +626,10 @@ class Bot:
                     func(msg, args)
                 else:
                     self.reply(msg, 'You do not have the permission to execute that command.')
+        elif msg.from_id in self.wpm:
+            (start, end, n) = self.wpm[msg.from_id]
+            n += len(msg.message) + 1
+            self.wpm[msg.from_id] = (start, msg.date, n)
 
         if txt == '!!debug' and msg.from_id == admin:
             print(repr(vars(self)))
