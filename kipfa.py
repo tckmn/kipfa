@@ -34,7 +34,7 @@ class Chats:
     haxorz   = 1059322065
     mariposa = 1053893427
     ppnt     = 1232971188
-    schmett  = 1032618176
+    schmett  = 1119355580
     testing  = 1178303268
     duolingo = 1105416173
 
