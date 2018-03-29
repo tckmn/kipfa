@@ -643,6 +643,19 @@ class Bot:
         if txt[:len(self.prefix)] == self.prefix:
             cmd, *args = txt[len(self.prefix):].split(' ', 1)
             args = args[0] if len(args) else None
+            if cmd == 'xargs':
+                rmsg = self.get_reply(msg)
+                if rmsg is None:
+                    self.reply(msg, 'Please reply to a message for xargs.')
+                    cmd = '' # skip the following if
+                elif args is None:
+                    self.reply(msg, 'Please give a command name to xargs.')
+                    cmd = '' # skip the following if
+                else:
+                    cmd, *args = args.split(' ', 1)
+                    args = args[0] if len(args) else '{}'
+                    if '{}' not in args: args += ' {}'
+                    args = args.replace('{}', rmsg.message)
             if cmd in self.commands:
                 (func, perms) = self.commands[cmd]
                 if perms.check(msg.from_id):
