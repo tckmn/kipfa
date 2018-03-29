@@ -170,6 +170,7 @@ class Bot:
             'soguess':     (self.cmd_soguess,     Perm([], [])),
             'ddg':         (self.cmd_ddg,         Perm([], [])),
             'wpm':         (self.cmd_wpm,         Perm([], [])),
+            'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
 
@@ -548,6 +549,12 @@ class Bot:
             self.reply(msg, '{:.3f} WPM'.format(n / ((end - start) / 60.0) / 5))
         else:
             self.wpm[uid] = (msg.date, msg.date, 0)
+
+    def cmd_flypflap(self, msg, args):
+        '''
+        Flypflap
+        '''
+        self.reply(msg, random.choice(['Go to the top', 'Flip-valve', 'Flytrap']))
 
     def cmd_restart(self, msg, args):
         '''
