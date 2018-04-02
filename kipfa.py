@@ -3,6 +3,7 @@
 from collections import Counter
 from threading import Thread
 import datetime
+import hashlib
 import json
 import os
 import random
@@ -37,6 +38,8 @@ class Chats:
     schmett  = 1119355580
     testing  = 1178303268
     duolingo = 1105416173
+    naclo    = 1088995343
+    newdays  = 1211597524
 
 def xtoi(s):
     s = s[1:]
@@ -81,6 +84,10 @@ def getbda():
 def getkernel():
     r = requests.get('https://kernel.org/')
     return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
+
+def getnaclo():
+    r = requests.get('http://nacloweb.org/')
+    return hashlib.md5(requests.get('http://nacloweb.org/').text.encode('utf-8')).hexdigest()
 
 def chat_id(msg):
     if isinstance(msg, types.Message):
@@ -210,6 +217,7 @@ class Bot:
         self.review = getreview()
         self.bda = getbda()
         self.kernel = getkernel()
+        self.naclo = getnaclo()
 
         self.recog = sr.Recognizer()
 
@@ -600,6 +608,11 @@ class Bot:
             self.kernel = newkernel
             self.client.send_message(Chats.haxorz, 'kernel '+self.kernel+' released')
 
+        newnaclo = getnaclo()
+        if newnaclo and self.naclo != newnaclo:
+            self.naclo = newnaclo
+            self.client.send_message(Chats.naclo, '@KeyboardFire it changed')
+
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_msg_id'): return None
         return self.client.send(
@@ -715,10 +728,11 @@ class Bot:
             self.process_message(update)
 
     def daily(self):
-        text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
-        self.client.send_message(Chats.schmett, text)
-        self.client.send_message(Chats.haxorz, text)
-        self.client.send_message(Chats.duolingo, text)
+        pass
+        #text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
+        #self.client.send_message(Chats.schmett, text)
+        #self.client.send_message(Chats.haxorz, text)
+        #self.client.send_message(Chats.duolingo, text)
 
 client = Client('meemerino')
 bot = Bot(client)
