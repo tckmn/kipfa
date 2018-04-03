@@ -646,7 +646,7 @@ class Bot:
                 for part in re.split(r'(?<!\\)\|', txt[len(self.prefix)+1:]):
                     cmd, *args = part.split(' ', 1)
                     args = args[0] if len(args) else '{}'
-                    if '{}' not in args: args += ' {}'
+                    if '{}' not in args and buf: args += ' {}'
                     args = args.replace('{}', buf)
                     if cmd in self.commands:
                         (func, perms) = self.commands[cmd]
