@@ -248,18 +248,18 @@ class Bot:
         help helps helpfully, a helper helping helpees.
         '''
         if args is None:
-            self.reply(msg, 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix))
+            return 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix)
         else:
             if args in self.commands:
-                self.reply(msg, ' '.join(self.commands[args][0].__doc__.format(prefix=self.prefix).split()))
+                return ' '.join(self.commands[args][0].__doc__.format(prefix=self.prefix).split())
             else:
-                self.reply(msg, 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix))
+                return 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix)
 
     def cmd_commands(self, msg, args):
         '''
         Lists all of the bot's commands.
         '''
-        self.reply(msg, ', '.join(self.commands.keys()))
+        return ', '.join(self.commands.keys())
 
     def cmd_prefix(self, msg, args):
         '''
@@ -267,9 +267,9 @@ class Bot:
         '''
         if args:
             self.prefix = args
-            self.reply(msg, 'Prefix updated.')
+            return 'Prefix updated.'
         else:
-            self.reply(msg, 'Please specify a prefix to set.')
+            return 'Please specify a prefix to set.'
 
     def cmd_getperm(self, msg, args):
         '''
@@ -277,29 +277,28 @@ class Bot:
         command.
         '''
         if args in self.commands:
-            self.reply(msg, 'Permissions for command {}: {}.'.format(
+            return 'Permissions for command {}: {}.'.format(
                 args,
                 self.commands[args][1].fmt(self.idtoname)
-                ))
+                )
         elif args:
-            self.reply(msg, 'Unknown command {}.'.format(args))
+            return 'Unknown command {}.'.format(args)
         else:
-            self.reply(msg, 'Please specify a command name.')
+            return 'Please specify a command name.'
 
     def cmd_js(self, msg, args):
         '''
         Executes (sandboxed) JavaScript code and returns the value of the last
         expression.
         '''
-        self.reply(msg, os.popen("""node -e 'var Sandbox = require("./node_modules/sandbox"), s = new Sandbox(); s.options.timeout = 2000; s.run("{}", function(x) {{ console.log(x.result == "TimeoutError" ? "2 second timeout reached." : x.result); }});'""".format(args.replace('\\', '\\\\').replace("'", "'\\''").replace('"', '\\"'))).read())
+        return os.popen("""node -e 'var Sandbox = require("./node_modules/sandbox"), s = new Sandbox(); s.options.timeout = 2000; s.run("{}", function(x) {{ console.log(x.result == "TimeoutError" ? "2 second timeout reached." : x.result); }});'""".format(args.replace('\\', '\\\\').replace("'", "'\\''").replace('"', '\\"'))).read()
 
     def cmd_steno(self, msg, args):
         '''
         Displays the given chord on a steno keyboard.
         '''
         if args is None:
-            self.reply(msg, 'Please specify a steno string.')
-            return
+            return 'Please specify a steno string.'
         m = re.search(r'[AO*\-EU]+', args)
         if re.fullmatch(r'S?T?K?P?W?H?R?A?O?\*?-?E?U?F?R?P?B?L?G?T?S?D?Z?', args) and m:
             dups = 'SPTR'
@@ -311,7 +310,7 @@ class Bot:
             self.reply_photo(msg, 'tmp.png')
             os.remove('tmp.png')
         else:
-            self.reply(msg, 'Invalid steno.')
+            return 'Invalid steno.'
 
     def cmd_expand(self, msg, args):
         '''
@@ -320,11 +319,11 @@ class Bot:
         '''
         args = args.lower()
         if any(not ('a' <= ch <= 'z') for ch in args):
-            self.reply(msg, 'Letters only please.')
+            return 'Letters only please.'
         elif len(args) > 10:
-            self.reply(msg, 'Maximum of 10 letters allowed.')
+            return 'Maximum of 10 letters allowed.'
         else:
-            self.reply(msg, ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args]))
+            return ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args])
 
     def cmd_bash(self, msg, args):
         '''
@@ -332,30 +331,29 @@ class Bot:
         '''
         # quote = BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find('p', class_='qt').text
         quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
-        self.reply(msg, '```\n{}\n```'.format(quote))
+        return '```\n{}\n```'.format(quote)
 
     def cmd_uptime(self, msg, args):
         '''
         Tells how long the bot has been running since its last restart.
         '''
-        self.reply(msg, str(datetime.timedelta(seconds=int(time.time() - self.starttime))))
+        return str(datetime.timedelta(seconds=int(time.time() - self.starttime)))
 
     def cmd_frink(self, msg, args):
         '''
         Executes Frink code (https://frinklang.org/).
         '''
         if args is None:
-            self.reply(msg, 'Please provide Frink code to run.')
-        else:
-            self.frink.stdin.write(args.encode('utf-8') + b'\n')
-            self.frink.stdin.flush()
-            r = self.frink.stdout.readline()
-            ans = b''
-            while True:
-                line = self.frink.stdout.readline()
-                if line == r: break
-                ans += line
-            self.reply(msg, ans.decode('utf-8'))
+            return 'Please provide Frink code to run.'
+        self.frink.stdin.write(args.encode('utf-8') + b'\n')
+        self.frink.stdin.flush()
+        r = self.frink.stdout.readline()
+        ans = b''
+        while True:
+            line = self.frink.stdout.readline()
+            if line == r: break
+            ans += line
+        return ans.decode('utf-8')
 
     def cmd_transcribe(self, msg, args):
         '''
@@ -363,19 +361,15 @@ class Bot:
         '''
         rmsg = self.get_reply(msg)
         if rmsg is None or not hasattr(rmsg, 'media'):
-            self.reply(msg, 'Please reply to a voice message.')
-            return
+            return 'Please reply to a voice message.'
         media = rmsg.media
         if not isinstance(media, types.MessageMediaDocument):
-            self.reply(msg, 'Please reply to a voice message.')
-            return
+            return 'Please reply to a voice message.'
         doc = media.document
         if doc.mime_type != 'audio/ogg':
-            self.reply(msg, 'Please reply to a voice message.')
-            return
+            return 'Please reply to a voice message.'
         if doc.size > 1024 * 200:
-            self.reply(msg, 'Message too big.')
-            return
+            return 'Message too big.'
         fname = '{}_{}_0.jpg'.format(doc.id, doc.access_hash)
         self.client.get_file(doc.dc_id, doc.id, doc.access_hash)
         os.system('ffmpeg -i {} out.wav'.format(fname))
@@ -384,9 +378,9 @@ class Bot:
             audio = self.recog.record(source)
         os.remove('out.wav')
         try:
-            self.reply(msg, self.recog.recognize_sphinx(audio) or '(lambs)')
+            return self.recog.recognize_sphinx(audio) or '(lambs)'
         except sr.UnknownValueError:
-            self.reply(msg, '(error)')
+            return '(error)'
 
     def cmd_puzzle(self, msg, args):
         '''
@@ -397,28 +391,26 @@ class Bot:
         {prefix}leaderboard.
         '''
         if not args:
-            self.reply(msg, self.puzdesc())
-            return
+            return self.puzdesc()
         if msg.from_id in self.puztime and self.puztime[msg.from_id] > time.time():
-            self.reply(msg, 'Max one guess per person per hour.')
-            return
+            return 'Max one guess per person per hour.'
         if getattr(puzzle, 'guess'+str(self.puzlevel))(args):
             self.puzlevel += 1
             self.puzhist += [msg.from_id]
             open('puzhist', 'w').write(repr(self.puzhist))
-            self.reply(msg, 'Correct! ' + self.puzdesc())
+            return 'Correct! ' + self.puzdesc()
         else:
             self.puztime[msg.from_id] = time.time() + 60*60
             open('puztime', 'w').write(repr(self.puztime))
-            self.reply(msg, 'Sorry, that\'s incorrect.')
+            return 'Sorry, that\'s incorrect.'
 
     def cmd_puzhist(self, msg, args):
         '''
         Returns the list of people in order who have solved the puzzles from
         the {prefix}puzzle command so far.
         '''
-        self.reply(msg, 'Puzzles solved so far by: ' +
-                ', '.join(map(usernamify(self.idtoname), self.puzhist)))
+        return 'Puzzles solved so far by: ' + \
+                ', '.join(map(usernamify(self.idtoname), self.puzhist))
 
     def cmd_leaderboard(self, msg, args):
         '''
@@ -427,7 +419,7 @@ class Bot:
         '''
         data = sorted(Counter(map(usernamify(self.idtoname), self.puzhist)).items(), key=lambda x: -x[1])
         maxlen = max(len(x[0]) for x in data)
-        self.reply(msg, '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```')
+        return '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```'
 
     def cmd_translate(self, msg, args):
         '''
@@ -440,7 +432,7 @@ class Bot:
             tl = m.group(1)
             args = args[args.find(':')+1:]
         (res, sl) = translate(args, tl)
-        self.reply(msg, '(from {}) {}'.format(langs[sl], res))
+        return '(from {}) {}'.format(langs[sl], res)
 
     def cmd_flipflop(self, msg, args):
         '''
@@ -459,8 +451,7 @@ class Bot:
         else:
             hist += ['(chose '+langs[tl]+')']
         if len(args) > 100:
-            self.reply(msg, "That's too long. Try something shorter please.")
-            return
+            return "That's too long. Try something shorter please."
         hist += [args]
         while 1:
             (res, sl) = translate(args, tl)
@@ -474,7 +465,7 @@ class Bot:
                 break
             hist += [res2]
             args = res2
-        self.reply(msg, '\n'.join(hist))
+        return '\n'.join(hist)
 
     def cmd_flepflap(self, msg, args):
         '''
@@ -492,11 +483,9 @@ class Bot:
             args = args[args.find(':')+1:].strip()
         tls = [tl for x in m.split() for tl in (random.sample(list(langs.keys()), int(x)) if x.isdigit() else [x])]
         if len(tls) > 8:
-            self.reply(msg, "That's too many languages. You may provide a maximum of 8.")
-            return
+            return "That's too many languages. You may provide a maximum of 8."
         if len(args) > 100:
-            self.reply(msg, "That's too long. Try something shorter please.")
-            return
+            return "That's too long. Try something shorter please."
         hist += [args]
         for tl in tls:
             (res, sl) = translate(args, tl)
@@ -504,7 +493,7 @@ class Bot:
             (res2, sl2) = translate(res, 'en')
             hist += [res2]
             args = res2
-        self.reply(msg, '\n'.join(hist))
+        return '\n'.join(hist)
 
     def cmd_soguess(self, msg, args):
         '''
@@ -517,17 +506,16 @@ class Bot:
             for item in sorted(data['items'], key=lambda x: -x['score']):
                 pre = BeautifulSoup(item['body'], 'html.parser').find('pre')
                 if pre is not None and 10 < len(pre.text) < 500:
-                    self.reply(msg, 'Guess a tag!\n```\n' + pre.text + '```')
                     qdata = json.loads(requests.get('https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('.format(item['question_id'])).text)
                     self.soguess = qdata['items'][0]['tags']
                     self.quota = qdata['quota_remaining']
-                    break
-            else:
-                # somehow no answers matched the criteria
-                self.reply(msg, 'Something went horribly wrong')
+                    return 'Guess a tag!\n```\n' + pre.text + '```'
+            # somehow no answers matched the criteria
+            return 'Something went horribly wrong'
         else:
-            self.reply(msg, 'The correct tags were: ' + ', '.join(self.soguess))
+            resp = 'The correct tags were: ' + ', '.join(self.soguess)
             self.soguess = None
+            return resp
 
     def cmd_ddg(self, msg, args):
         '''
@@ -535,12 +523,11 @@ class Bot:
         query.
         '''
         if args is None:
-            self.reply(msg, 'Please provide a search query.')
-            return
+            return 'Please provide a search query.'
         url = 'https://duckduckgo.com/html/?q=' + urllib.parse.quote(args)
         res = BeautifulSoup(requests.get(url).text, 'lxml').find('div', class_='web-result')
         link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
-        self.reply(msg, link if link else 'No results.')
+        return link if link else 'No results.'
 
     def cmd_wpm(self, msg, args):
         '''
@@ -552,9 +539,8 @@ class Bot:
             (start, end, n) = self.wpm[uid]
             del self.wpm[uid]
             if start == end:
-                self.reply(msg, "Please type for longer than a second.")
-                return
-            self.reply(msg, '{:.3f} WPM'.format(n / ((end - start) / 60.0) / 5))
+                return "Please type for longer than a second."
+            return '{:.3f} WPM'.format(n / ((end - start) / 60.0) / 5)
         else:
             self.wpm[uid] = (msg.date, msg.date, 0)
 
@@ -562,7 +548,7 @@ class Bot:
         '''
         Flypflap
         '''
-        self.reply(msg, random.choice(['Go to the top', 'Flip-valve', 'Flytrap']))
+        return random.choice(['Go to the top', 'Flip-valve', 'Flytrap'])
 
     def cmd_restart(self, msg, args):
         '''
@@ -614,7 +600,7 @@ class Bot:
             self.client.send_message(Chats.naclo, '@KeyboardFire it changed')
 
     def get_reply(self, msg):
-        if not hasattr(msg, 'reply_to_msg_id'): return None
+        if not hasattr(msg, 'reply_to_msg_id') or msg.reply_to_msg_id is None: return None
         return self.client.send(
                 functions.channels.GetMessages(
                     self.client.peers_by_id[msg.to_id.channel_id],
@@ -654,27 +640,36 @@ class Bot:
             return
 
         if txt[:len(self.prefix)] == self.prefix:
-            cmd, *args = txt[len(self.prefix):].split(' ', 1)
-            args = args[0] if len(args) else None
-            if cmd == 'xargs':
+            if txt[len(self.prefix)] == '|':
                 rmsg = self.get_reply(msg)
-                if rmsg is None:
-                    self.reply(msg, 'Please reply to a message for xargs.')
-                    cmd = '' # skip the following if
-                elif args is None:
-                    self.reply(msg, 'Please give a command name to xargs.')
-                    cmd = '' # skip the following if
-                else:
-                    cmd, *args = args.split(' ', 1)
+                buf = rmsg.message if rmsg else ''
+                for part in re.split(r'(?<!\\)\|', txt[len(self.prefix)+1:]):
+                    cmd, *args = part.split(' ', 1)
                     args = args[0] if len(args) else '{}'
                     if '{}' not in args: args += ' {}'
-                    args = args.replace('{}', rmsg.message)
-            if cmd in self.commands:
-                (func, perms) = self.commands[cmd]
-                if perms.check(msg.from_id):
-                    func(msg, args)
+                    args = args.replace('{}', buf)
+                    if cmd in self.commands:
+                        (func, perms) = self.commands[cmd]
+                        if perms.check(msg.from_id):
+                            buf = func(msg, args) or ''
+                        else:
+                            self.reply(msg, 'You do not have the permission to execute the {} command.'.format(cmd))
+                            break
+                    else:
+                        self.reply(msg, 'The command {} does not exist.'.format(cmd))
+                        break
                 else:
-                    self.reply(msg, 'You do not have the permission to execute that command.')
+                    self.reply(msg, buf)
+            else:
+                cmd, *args = txt[len(self.prefix):].split(' ', 1)
+                args = args[0] if len(args) else None
+                if cmd in self.commands:
+                    (func, perms) = self.commands[cmd]
+                    if perms.check(msg.from_id):
+                        resp = func(msg, args)
+                        if resp: self.reply(msg, resp)
+                    else:
+                        self.reply(msg, 'You do not have the permission to execute that command.')
         elif msg.from_id in self.wpm:
             (start, end, n) = self.wpm[msg.from_id]
             n += len(msg.message) + 1
