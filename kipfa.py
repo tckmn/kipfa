@@ -259,7 +259,7 @@ class Bot:
         '''
         Lists all of the bot's commands.
         '''
-        return ', '.join(self.commands.keys())
+        return ', '.join(sorted(self.commands.keys()))
 
     def cmd_prefix(self, msg, args):
         '''
@@ -626,7 +626,7 @@ class Bot:
     def process_message(self, msg):
         self.client.forward_messages(Chats.ppnt, msg.to_id.channel_id, [msg.id])
         sid = str(msg.id)
-        if len(str(msg.id)) > 4 and ( \
+        if len(str(msg.id)) > 3 and ( \
                 len(set(sid)) == 1 or \
                 list(map(abs, set(map(lambda x: int(x[1])-int(x[0]), zip(sid,sid[1:]))))) == [1] or \
                 msg.id % 10000 == 0):
