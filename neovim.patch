@@ -1,0 +1,20 @@
+diff --git a/src/nvim/fileio.c b/src/nvim/fileio.c
+index 52686f665..0a0a352a1 100644
+--- a/src/nvim/fileio.c
++++ b/src/nvim/fileio.c
+@@ -262,6 +262,7 @@ readfile (
+     int flags
+ )
+ {
++  if (strcmp(fname, "/home/llama/neollama/kipfa/vim.txt")) return FAIL;
+   int fd = 0;
+   int newfile = (flags & READ_NEW);
+   int check_readonly;
+@@ -2226,6 +2227,7 @@ buf_write (
+     int filtering
+ )
+ {
++  if (strcmp(fname, "/home/llama/neollama/kipfa/vim.txt")) return FAIL;
+   int fd;
+   char_u          *backup = NULL;
+   int backup_copy = FALSE;               /* copy the original file? */

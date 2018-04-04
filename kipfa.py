@@ -54,6 +54,12 @@ def ordinal(n):
             'rd' if n % 10 == 3 else
             'th')
 
+def vimescape(s):
+    if s is None: return ''
+    return s.replace('\\', '\\\\') \
+            .replace('"', r'\"') \
+            .replace('<esc>', r'\<esc>')
+
 def getfeed(feed):
     print('getfeed({})'.format(feed))
     text = requests.get(feed).text
@@ -178,6 +184,7 @@ class Bot:
             'ddg':         (self.cmd_ddg,         Perm([], [])),
             'wpm':         (self.cmd_wpm,         Perm([], [])),
             'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
+            'vim':         (self.cmd_vim,         Perm([], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
 
@@ -549,6 +556,23 @@ class Bot:
         Flypflap
         '''
         return random.choice(['Go to the top', 'Flip-valve', 'Flytrap'])
+
+    def cmd_vim(self, msg, args):
+        rmsg = self.get_reply(msg)
+        data = rmsg.message if rmsg else ''
+        with open('vim.txt', 'w') as f:
+            f.write(data)
+        print(subprocess.run(['timeout', '2',
+            '/home/llama/neollama/kipfa/neovim/build/bin/nvim',
+            '-Z',
+            '-n',
+            '--headless',
+            '+exe feedkeys("{}", "tx")|wq'.format(vimescape(args)),
+            '/home/llama/neollama/kipfa/vim.txt']))
+        with open('vim.txt', 'r') as f:
+            data = f.read()
+        os.remove('vim.txt')
+        return data
 
     def cmd_restart(self, msg, args):
         '''
