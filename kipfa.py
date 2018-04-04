@@ -731,16 +731,20 @@ class Bot:
         if txt == '!!debug' and msg.from_id == admin:
             print(repr(vars(self)))
         elif txt == '!!updateusers' and msg.from_id == admin:
-            self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
-                functions.channels.GetParticipants(
-                    self.client.peers_by_id[msg.to_id.channel_id],
-                    types.ChannelParticipantsRecent(),
-                    0, 0, 0
-                    )
-                ).users))}
+            count = 0
+            for ch in self.client.send(functions.messages.GetAllChats([])).chats:
+                if isinstance(ch, types.Channel):
+                    count += 1
+                    self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
+                        functions.channels.GetParticipants(
+                            self.client.peers_by_id[-1000000000000-ch.id],
+                            types.ChannelParticipantsRecent(),
+                            0, 0, 0
+                            )
+                        ).users))}
             open('nametoid', 'w').write(repr(self.nametoid))
             self.idtoname = dict(reversed(x) for x in self.nametoid.items())
-            self.reply(msg, 'updated {} users'.format(len(self.nametoid)))
+            self.reply(msg, 'updated {} users in {} chats'.format(len(self.nametoid), count))
         elif txt == '!!quota' and msg.from_id == admin:
             self.reply(msg, str(self.quota))
         elif txt == '!!daily' and msg.from_id == admin:
