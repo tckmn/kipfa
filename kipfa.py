@@ -30,6 +30,7 @@ import keyboard
 import puzzle
 
 admin = 212594557
+kurt  = 254619689
 class Chats:
     frink    = 1277770483
     haxorz   = 1059322065
@@ -185,6 +186,8 @@ class Bot:
             'wpm':         (self.cmd_wpm,         Perm([], [])),
             'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
             'vim':         (self.cmd_vim,         Perm([], [])),
+            'getshock':    (self.cmd_getshock,    Perm([], [])),
+            'shock':       (self.cmd_shock,       Perm([kurt], [])),
             'perm':        (self.cmd_perm,        Perm([admin], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
@@ -248,6 +251,9 @@ class Bot:
         self.quota = '(unknown)'
 
         self.wpm = dict()
+
+        try: self.shocks = eval(open('shocks').read())
+        except FileNotFoundError: self.shocks = {}
 
         self.dailied = False
 
@@ -574,6 +580,25 @@ class Bot:
             data = f.read()
         os.remove('vim.txt')
         return data
+
+    def cmd_getshock(self, msg, args):
+        return '\n'.join('{}: {}'.format(k, v) for (k,v) in sorted(self.shocks.items(), key=lambda x: -x[1]))
+
+    def cmd_shock(self, msg, args):
+        if args is None:
+            return 'Please specify who to shock.'
+        num = re.search(r'[+-]?\d+$', args)
+        if num:
+            args = args[:num.start()]
+            num = int(num.group())
+        else:
+            num = 1
+        args = ' '.join(args.split()).title()
+        if args not in self.shocks: self.shocks[args] = 0
+        self.shocks[args] += num
+        with open('shocks', 'w') as f:
+            f.write(repr(self.shocks))
+        return '{} now has {} shocks'.format(args, self.shocks[args])
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
