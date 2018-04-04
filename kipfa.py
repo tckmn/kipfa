@@ -635,21 +635,24 @@ class Bot:
         self.client.stop()
         os._exit(0)
 
+    def send_feed(url, guid, text):
+        if guid not in self.feeds[url]:
+            self.client.send_message(Chats.haxorz, text)
+            self.feeds[url].append(guid)
+
+    def send_rss(url, feed):
+        for item in feed[0].findall('item'):
+            self.send_feed(url, item.find('guid').text, item.find('link').text)
+
+    def send_atom(url, feed):
+        for item in feed.findall('entry'):
+            self.send_feed(url, item.find('id').text, item.find('link').attrib['href'])
+
     def checkwebsites(self):
         for url in self.feeds:
             feed = getfeed(url)
-            if feed.tag == 'rss':
-                for item in feed[0].findall('item'):
-                    guid = item.find('guid').text
-                    if guid not in self.feeds[url]:
-                        self.client.send_message(Chats.haxorz, item.find('link').text)
-                        self.feeds[url].append(guid)
-            else:
-                for item in feed.findall('entry'):
-                    guid = item.find('id').text
-                    if guid not in self.feeds[url]:
-                        self.client.send_message(Chats.haxorz, item.find('link').attrib['href'])
-                        self.feeds[url].append(guid)
+            if feed.tag == 'rss': self.send_rss(url, feed)
+            else: self.send_atom(url, feed)
 
         newuotd = getuotd()
         if newuotd and self.uotd != newuotd:
