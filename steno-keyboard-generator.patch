@@ -1,0 +1,15 @@
+diff --git a/key.py b/key.py
+index 1549b3b..3451007 100644
+--- a/key.py
++++ b/key.py
+@@ -62,8 +62,8 @@ def draw_key_shadow(ctx,shape,width,height):
+     Draw the given shape several times to imitate box blur.
+     """
+     ctx.save()
+-    for x in xrange(5,15):
+-        for y in xrange(5,15):
++    for x in range(5,15):
++        for y in range(5,15):
+             ctx.translate(1,0)
+             ctx.set_source_rgba(0,0,0,0.005)
+             shape(ctx,0,width,height)
