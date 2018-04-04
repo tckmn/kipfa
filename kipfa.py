@@ -185,6 +185,7 @@ class Bot:
             'wpm':         (self.cmd_wpm,         Perm([], [])),
             'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
             'vim':         (self.cmd_vim,         Perm([], [])),
+            'perm':        (self.cmd_perm,        Perm([admin], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
 
@@ -573,6 +574,33 @@ class Bot:
             data = f.read()
         os.remove('vim.txt')
         return data
+
+    def cmd_perm(self, msg, args):
+        usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
+        already = 'That permission is already set.'
+        success = 'Permission successfully set.'
+        parts = (args or '').split(' ')
+        if len(parts) != 3: return usage
+        (cmd, action, user) = parts
+        if cmd not in self.commands or user not in self.nametoid: return usage
+        uid = self.nametoid[user]
+        p = self.commands[cmd][1]
+        if action == 'whitelist':
+            if uid in p.whitelist: return already
+            p.whitelist.append(uid)
+            return success
+        elif action == 'blacklist':
+            if uid in p.blacklist: return already
+            p.blacklist.append(uid)
+            return success
+        elif action == 'unwhitelist':
+            if uid not in p.whitelist: return already
+            p.whitelist.remove(uid)
+            return success
+        elif action == 'unblacklist':
+            if uid not in p.blacklist: return already
+            p.blacklist.remove(uid)
+            return success
 
     def cmd_restart(self, msg, args):
         '''
