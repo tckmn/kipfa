@@ -603,14 +603,15 @@ class Bot:
         if not hasattr(msg, 'reply_to_msg_id') or msg.reply_to_msg_id is None: return None
         return self.client.send(
                 functions.channels.GetMessages(
-                    self.client.peers_by_id[msg.to_id.channel_id],
-                    [msg.reply_to_msg_id]
+                    self.client.peers_by_id[-1000000000000-msg.to_id.channel_id],
+                    [types.InputMessageID(msg.reply_to_msg_id)]
                     )
                 ).messages[0]
 
     def reply(self, msg, txt):
         print(txt)
-        self.client.send_message(chat_id(msg), txt, reply_to_msg_id=msg.id)
+        self.client.send_message(chat_id(msg), txt#, reply_to_msg_id=msg.id)
+                )
 
     def reply_photo(self, msg, path):
         print(path)
@@ -707,7 +708,7 @@ class Bot:
             if re.search(pat, txt) and random.random() < prob:
                 self.reply(msg, resp(txt))
 
-    def callback(self, update):
+    def callback(self, client, update, users, chats):
         if isinstance(update, types.Update):
             for u in update.updates: self.callback(u)
         elif isinstance(update, types.UpdateNewChannelMessage):
