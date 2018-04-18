@@ -721,7 +721,7 @@ class Bot:
         if not txt: return
 
         if msg.to_id.channel_id == Chats.frink:
-            self.commands['frink'][0](msg, txt)
+            self.reply(msg, self.commands['frink'][0](msg, txt))
             return
 
         if txt[:len(self.prefix)] == self.prefix:
