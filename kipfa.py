@@ -598,9 +598,11 @@ class Bot:
         args = ' '.join(args.split()).title()
         if args not in self.shocks: self.shocks[args] = 0
         self.shocks[args] += num
+        s = self.shocks[args]
+        if s == 0: del self.shocks[args]
         with open('shocks', 'w') as f:
             f.write(repr(self.shocks))
-        return '{} now has {} shocks'.format(args, self.shocks[args])
+        return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
