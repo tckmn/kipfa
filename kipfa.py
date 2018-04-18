@@ -657,7 +657,7 @@ class Bot:
         newuotd = getuotd()
         if newuotd and self.uotd != newuotd:
             self.uotd = newuotd
-            self.client.send_message(Chats.haxorz, 'obtw new uotd\n```\n'+re.sub(r'!', lambda x: '▓░'[x.start()%2], re.sub(r'\d', lambda n: '!'*int(n.group()), self.uotd.split()[0].translate(str.maketrans('kqrbnpKQRBNP/','♔♕♖♗♘♙♚♛♜♝♞♟\n'))))+'\n```')
+            self.client.send_message(Chats.haxorz, 'obtw new uotd')
 
         newreview = getreview()
         if newreview and self.review != newreview:
