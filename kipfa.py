@@ -361,7 +361,7 @@ class Bot:
         '''
         if args is None:
             return 'Please provide Frink code to run.'
-        self.frink.stdin.write(args.encode('utf-8') + b'\n')
+        self.frink.stdin.write(args.replace('\n', ' ').encode('utf-8') + b'\n')
         self.frink.stdin.flush()
         r = self.frink.stdout.readline()
         ans = b''
