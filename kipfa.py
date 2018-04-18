@@ -141,7 +141,7 @@ def translate(text, tl):
         'oe': 'UTF-8',
         'q': text
         }).text)
-    return (resp[0][0][0], resp[2])
+    return (''.join(x[0] for x in resp[0]), resp[2])
 
 class Perm:
 
