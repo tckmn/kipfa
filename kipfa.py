@@ -4,6 +4,7 @@ from collections import Counter
 from threading import Thread
 import datetime
 import hashlib
+import html
 import json
 import os
 import random
@@ -639,16 +640,21 @@ class Bot:
         self.client.stop()
         os._exit(0)
 
-    def send_feed(url, guid, text):
+    def send_feed(self, url, guid, text):
         if guid not in self.feeds[url]:
             self.client.send_message(Chats.haxorz, text)
             self.feeds[url].append(guid)
 
-    def send_rss(url, feed):
+    def send_rss(self, url, feed):
         for item in feed[0].findall('item'):
-            self.send_feed(url, item.find('guid').text, item.find('link').text)
+            text = item.find('link').text
+            if url == 'http://xkcd.com/rss.xml':
+                text += ' ' + BeautifulSoup(html.unescape(item.find('description').text), 'html.parser').find('img').attrs['title']
+            elif url == 'http://www.smbc-comics.com/rss.php':
+                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[10]
+            self.send_feed(url, item.find('guid').text, text)
 
-    def send_atom(url, feed):
+    def send_atom(self, url, feed):
         for item in feed.findall('entry'):
             self.send_feed(url, item.find('id').text, item.find('link').attrib['href'])
 
