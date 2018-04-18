@@ -649,7 +649,7 @@ class Bot:
         for item in feed[0].findall('item'):
             text = item.find('link').text
             if url == 'http://xkcd.com/rss.xml':
-                text += ' ' + BeautifulSoup(html.unescape(item.find('description').text), 'html.parser').find('img').attrs['title']
+                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
             elif url == 'http://www.smbc-comics.com/rss.php':
                 text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[10]
             self.send_feed(url, item.find('guid').text, text)
