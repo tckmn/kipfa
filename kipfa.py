@@ -9,6 +9,7 @@ import json
 import os
 import random
 import re
+import select
 import shutil
 import subprocess
 import sys
@@ -187,6 +188,7 @@ class Bot:
             'wpm':         (self.cmd_wpm,         Perm([], [])),
             'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
             'vim':         (self.cmd_vim,         Perm([], [])),
+            'wump':        (self.cmd_wump,        Perm([], [])),
             'getshock':    (self.cmd_getshock,    Perm([], [])),
             'shock':       (self.cmd_shock,       Perm([kurt], [])),
             'perm':        (self.cmd_perm,        Perm([admin], [])),
@@ -252,6 +254,8 @@ class Bot:
         self.quota = '(unknown)'
 
         self.wpm = dict()
+
+        self.wump = None
 
         try: self.shocks = eval(open('shocks').read())
         except FileNotFoundError: self.shocks = {}
@@ -583,6 +587,27 @@ class Bot:
             data = f.read()
         os.remove('vim.txt')
         return data
+
+    def cmd_wump(self, msg, args):
+        if args is None:
+            if self.wump: return 'A game of wump is already in progress!'
+            else:
+                self.wump = subprocess.Popen(['wump'],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE)
+                args = 'n'
+        if self.wump is None:
+            return 'There is no game of wump in progress (type {}wump to start one!)'.format(self.prefix)
+        self.wump.stdin.write(args.encode('utf-8') + b'\n')
+        self.wump.stdin.flush()
+        resp = b''
+        while self.wump.poll() is None and \
+                select.select([self.wump.stdout], [], [], 0.1)[0]:
+            resp += os.read(self.wump.stdout.fileno(), 4096)
+        if self.wump.poll() is not None:
+            self.wump = None
+            resp += b' [terminated]'
+        return resp.decode('utf-8')
 
     def cmd_getshock(self, msg, args):
         return '\n'.join('{}: {}'.format(k, v) for (k,v) in sorted(self.shocks.items(), key=lambda x: -x[1]))
