@@ -224,7 +224,8 @@ class Bot:
             'http://feeds.feedburner.com/codinghorror?format=xml',
             'http://thecodelesscode.com/rss',
             'https://lichess.org/blog.atom',
-            'http://keyboardfire.com/blog.xml'
+            'http://keyboardfire.com/blog.xml',
+            'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd'
             ])
 
         self.uotd = getuotd()
@@ -681,7 +682,8 @@ class Bot:
 
     def send_atom(self, url, feed):
         for item in feed.findall('entry'):
-            self.send_feed(url, item.find('id').text, item.find('link').attrib['href'])
+            a = item.find('link').attrib
+            self.send_feed(url, item.find('id').text, a['href'] if 'href' in a else a['ns:href'])
 
     def checkwebsites(self):
         for url in self.feeds:
