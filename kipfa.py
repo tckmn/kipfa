@@ -84,7 +84,7 @@ def getuotd():
 
 def getreview():
     r = requests.get('https://www.sjsreview.com/?s=')
-    return BeautifulSoup(r.text, 'lxml').find('h2').find('a').attrs['href']
+    return BeautifulSoup(r.text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20')
 
 def getbda():
     r = requests.get('https://www.voanoticias.com/z/537')
