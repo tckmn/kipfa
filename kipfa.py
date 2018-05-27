@@ -2,6 +2,7 @@
 
 from collections import Counter
 from threading import Thread
+from io import StringIO
 import datetime
 import hashlib
 import html
@@ -68,8 +69,17 @@ def getfeed(feed):
     text = requests.get(feed).text
     if feed == 'http://www.archr.org/atom.xml':
         text = text.replace(' & ', ' &amp; ')
-    text = re.sub(r' xmlns="[^"]+"', '', text)
-    return ET.fromstring(text)
+
+    # https://stackoverflow.com/a/33997423/1223693
+    it = ET.iterparse(StringIO(text))
+    for _, el in it:
+        el.tag = el.tag[el.tag.find('}')+1:]
+        for at in el.attrib.keys():
+            if '}' in at:
+                el.attrib[at[at.find('}')+1:]] = el.attrib[at]
+                del el.attrib[at]
+
+    return it.root
 
 def guids(url):
     feed = getfeed(url)
@@ -683,7 +693,7 @@ class Bot:
     def send_atom(self, url, feed):
         for item in feed.findall('entry'):
             a = item.find('link').attrib
-            self.send_feed(url, item.find('id').text, a['href'] if 'href' in a else a['ns:href'])
+            self.send_feed(url, item.find('id').text, a['href'])
 
     def checkwebsites(self):
         for url in self.feeds:
