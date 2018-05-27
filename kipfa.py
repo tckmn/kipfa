@@ -201,6 +201,7 @@ class Bot:
             'wump':        (self.cmd_wump,        Perm([], [])),
             'getshock':    (self.cmd_getshock,    Perm([], [])),
             'shock':       (self.cmd_shock,       Perm([kurt], [])),
+            'mma':         (self.cmd_mma,         Perm([], [])),
             'perm':        (self.cmd_perm,        Perm([admin], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
@@ -640,6 +641,17 @@ class Bot:
         with open('shocks', 'w') as f:
             f.write(repr(self.shocks))
         return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
+
+    def cmd_mma(self, msg, args):
+        if args is None:
+            return 'Please provide Mathematica code to run.'
+        p = subprocess.run(['timeout', '-s9', '3',
+            '/home/llama/neollama/mma/scriptdir/wolframscript',
+            '-c',
+            'Developer`StartProtectedMode[];' + args], stdout=subprocess.PIPE)
+        print(p.returncode)
+        return '3 second timeout reached.' if p.returncode == -9 else \
+                p.stdout.decode('utf-8').strip() or '[no output]'
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
