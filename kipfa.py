@@ -52,7 +52,7 @@ def xtoi(s):
 
 def ordinal(n):
     return '{}{}'.format(n,
-            'th' if n//10 % 10 != 0 else
+            'th' if n//10 % 10 == 1 else
             'st' if n % 10 == 1 else
             'nd' if n % 10 == 2 else
             'rd' if n % 10 == 3 else
