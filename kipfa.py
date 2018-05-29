@@ -477,7 +477,7 @@ class Bot:
         '''
         m = re.match(r'([a-z-]*):', args)
         hist = []
-        tl = random.choice(list(langs.keys()))
+        tl = random.choice(list(langs.keys() - ['en']))
         if m:
             tl = m.group(1)
             args = args[args.find(':')+1:].strip()
@@ -514,7 +514,7 @@ class Bot:
         else:
             m = m.group(1)
             args = args[args.find(':')+1:].strip()
-        tls = [tl for x in m.split() for tl in (random.sample(list(langs.keys()), int(x)) if x.isdigit() else [x])]
+        tls = [tl for x in m.split() for tl in (random.sample(list(langs.keys() - ['en']), int(x)) if x.isdigit() else [x])]
         if len(tls) > 8:
             return "That's too many languages. You may provide a maximum of 8."
         if len(args) > 100:
