@@ -17,7 +17,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-from pyrogram import Client
+from pyrogram import Client, MessageHandler
 from pyrogram.api import types, functions
 
 import speech_recognition as sr
@@ -35,15 +35,15 @@ import puzzle
 admin = 212594557
 kurt  = 254619689
 class Chats:
-    frink    = 1277770483
-    haxorz   = 1059322065
-    mariposa = 1053893427
-    ppnt     = 1232971188
-    schmett  = 1119355580
-    testing  = 1178303268
-    duolingo = 1105416173
-    naclo    = 1088995343
-    newdays  = 1211597524
+    frink    = -1001277770483
+    haxorz   = -1001059322065
+    mariposa = -1001053893427
+    ppnt     = -1001232971188
+    schmett  = -1001119355580
+    testing  = -1001178303268
+    duolingo = -1001105416173
+    naclo    = -1001088995343
+    newdays  = -1001211597524
 
 def xtoi(s):
     s = s[1:]
@@ -107,12 +107,6 @@ def getkernel():
 def getnaclo():
     r = requests.get('http://nacloweb.org/')
     return hashlib.md5(requests.get('http://nacloweb.org/').text.encode('utf-8')).hexdigest()
-
-def chat_id(msg):
-    if isinstance(msg, types.Message):
-        return msg.to_id.channel_id
-    else:
-        return msg.chat_id
 
 def usernamify(idtoname):
     return lambda x: '@'+idtoname[x] if x in idtoname else str(x)
@@ -222,7 +216,7 @@ class Bot:
 
         ]
 
-        self.feeds = dict([x, guids(x)] for x in [
+        if False: self.feeds = dict([x, guids(x)] for x in [
             'http://xkcd.com/rss.xml',
             'http://what-if.xkcd.com/feed.atom',
             'http://www.smbc-comics.com/rss.php',
@@ -393,18 +387,14 @@ class Bot:
         Transcribes voice messages into text (very poorly) with PocketSphinx.
         '''
         rmsg = self.get_reply(msg)
-        if rmsg is None or not hasattr(rmsg, 'media'):
+        if rmsg is None or not hasattr(rmsg, 'voice'):
             return 'Please reply to a voice message.'
-        media = rmsg.media
-        if not isinstance(media, types.MessageMediaDocument):
+        voice = rmsg.voice
+        if voice.mime_type != 'audio/ogg':
             return 'Please reply to a voice message.'
-        doc = media.document
-        if doc.mime_type != 'audio/ogg':
-            return 'Please reply to a voice message.'
-        if doc.size > 1024 * 200:
+        if voice.file_size > 1024 * 200:
             return 'Message too big.'
-        fname = '{}_{}_0.jpg'.format(doc.id, doc.access_hash)
-        self.client.get_file(doc.dc_id, doc.id, doc.access_hash)
+        fname = self.client.download_media(rmsg)
         os.system('ffmpeg -i {} out.wav'.format(fname))
         os.remove(fname)
         with sr.AudioFile('out.wav') as source:
@@ -585,7 +575,7 @@ class Bot:
 
     def cmd_vim(self, msg, args):
         rmsg = self.get_reply(msg)
-        data = rmsg.message if rmsg else ''
+        data = rmsg.text if rmsg else ''
         with open('vim.txt', 'w') as f:
             f.write(data)
         print(subprocess.run(['timeout', '2',
@@ -739,23 +729,16 @@ class Bot:
             self.client.send_message(Chats.naclo, '@KeyboardFire it changed')
 
     def get_reply(self, msg):
-        if not hasattr(msg, 'reply_to_msg_id') or msg.reply_to_msg_id is None: return None
-        return self.client.send(
-                functions.channels.GetMessages(
-                    self.client.peers_by_id[-1000000000000-msg.to_id.channel_id],
-                    [types.InputMessageID(msg.reply_to_msg_id)]
-                    )
-                ).messages[0]
+        if not hasattr(msg, 'reply_to_message') or msg.reply_to_message is None: return None
+        return msg.reply_to_message
 
     def reply(self, msg, txt):
         print(txt)
-        self.client.send_message(chat_id(msg), txt#, reply_to_msg_id=msg.id)
-                )
+        self.client.send_message(msg.chat.id, txt, reply_to_message_id=msg.message_id)
 
     def reply_photo(self, msg, path):
         print(path)
-        self.client.send_photo(chat_id(msg), path#, reply_to_msg_id=msg.id)
-                )
+        self.client.send_photo(msg.chat.id, path, reply_to_message_id=msg.message_id)
 
     def puzdesc(self):
         return 'Level {}: {}'.format(
@@ -764,25 +747,27 @@ class Bot:
                 )
 
     def process_message(self, msg):
-        self.client.forward_messages(Chats.ppnt, msg.to_id.channel_id, [msg.id])
-        sid = str(msg.id)
-        if len(str(msg.id)) > 3 and ( \
+        self.client.forward_messages(Chats.ppnt, msg.chat.id, [msg.message_id])
+        if msg.edit_date: return
+
+        sid = str(msg.message_id)
+        if len(str(msg.message_id)) > 3 and ( \
                 len(set(sid)) == 1 or \
                 list(map(abs, set(map(lambda x: int(x[1])-int(x[0]), zip(sid,sid[1:]))))) == [1] or \
-                msg.id % 10000 == 0):
-            self.reply(msg, '{} message hype'.format(ordinal(msg.id)))
+                msg.message_id % 10000 == 0):
+            self.reply(msg, '{} message hype'.format(ordinal(msg.message_id)))
 
-        txt = msg.message
+        txt = msg.text
         if not txt: return
 
-        if msg.to_id.channel_id == Chats.frink:
+        if msg.chat.id == Chats.frink:
             self.reply(msg, self.commands['frink'][0](msg, txt))
             return
 
         if txt[:len(self.prefix)] == self.prefix:
             if txt[len(self.prefix)] == '|':
                 rmsg = self.get_reply(msg)
-                buf = rmsg.message if rmsg else ''
+                buf = rmsg.text if rmsg else ''
                 for part in re.split(r'(?<!\\)\|', txt[len(self.prefix)+1:]):
                     cmd, *args = part.split(' ', 1)
                     args = args[0] if len(args) else '{}'
@@ -790,7 +775,7 @@ class Bot:
                     args = args.replace('{}', buf)
                     if cmd in self.commands:
                         (func, perms) = self.commands[cmd]
-                        if perms.check(msg.from_id):
+                        if perms.check(msg.from_user.id):
                             buf = func(msg, args) or ''
                         else:
                             self.reply(msg, 'You do not have the permission to execute the {} command.'.format(cmd))
@@ -805,19 +790,19 @@ class Bot:
                 args = args[0] if len(args) else None
                 if cmd in self.commands:
                     (func, perms) = self.commands[cmd]
-                    if perms.check(msg.from_id):
+                    if perms.check(msg.from_user.id):
                         resp = func(msg, args)
                         if resp: self.reply(msg, resp)
                     else:
                         self.reply(msg, 'You do not have the permission to execute that command.')
-        elif msg.from_id in self.wpm:
-            (start, end, n) = self.wpm[msg.from_id]
-            n += len(msg.message) + 1
-            self.wpm[msg.from_id] = (start, msg.date, n)
+        elif msg.from_user.id in self.wpm:
+            (start, end, n) = self.wpm[msg.from_user.id]
+            n += len(msg.text) + 1
+            self.wpm[msg.from_user.id] = (start, msg.date, n)
 
-        if txt == '!!debug' and msg.from_id == admin:
+        if txt == '!!debug' and msg.from_user.id == admin:
             print(repr(vars(self)))
-        elif txt == '!!updateusers' and msg.from_id == admin:
+        elif txt == '!!updateusers' and msg.from_user.id == admin:
             count = 0
             for ch in self.client.send(functions.messages.GetAllChats([])).chats:
                 if isinstance(ch, types.Channel):
@@ -832,9 +817,9 @@ class Bot:
             open('nametoid', 'w').write(repr(self.nametoid))
             self.idtoname = dict(reversed(x) for x in self.nametoid.items())
             self.reply(msg, 'updated {} users in {} chats'.format(len(self.nametoid), count))
-        elif txt == '!!quota' and msg.from_id == admin:
+        elif txt == '!!quota' and msg.from_user.id == admin:
             self.reply(msg, str(self.quota))
-        elif txt == '!!daily' and msg.from_id == admin:
+        elif txt == '!!daily' and msg.from_user.id == admin:
             self.daily()
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
@@ -851,20 +836,9 @@ class Bot:
             if re.search(pat, txt) and random.random() < prob:
                 self.reply(msg, resp(txt))
 
-    def callback(self, client, update, users, chats):
-        if isinstance(update, types.Update):
-            for u in update.updates: self.callback(u)
-        elif isinstance(update, types.UpdateNewChannelMessage):
-            msg = update.message
-            print(msg)
-            self.process_message(msg)
-        elif isinstance(update, types.UpdateEditChannelMessage):
-            msg = update.message
-            print(msg)
-            self.client.forward_messages(Chats.ppnt, msg.to_id.channel_id, [msg.id])
-        elif isinstance(update, types.UpdateShortChatMessage):
-            print(update)
-            self.process_message(update)
+    def callback(self, client, update):
+        print(update)
+        self.process_message(update)
 
     def daily(self):
         pass
@@ -875,7 +849,7 @@ class Bot:
 
 client = Client('meemerino')
 bot = Bot(client)
-client.set_update_handler(bot.callback)
+client.add_handler(MessageHandler(bot.callback))
 client.start()
 client.send_message(Chats.testing, 'bot started')
 
