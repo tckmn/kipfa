@@ -104,10 +104,6 @@ def getkernel():
     r = requests.get('https://kernel.org/')
     return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
 
-def getnaclo():
-    r = requests.get('http://nacloweb.org/')
-    return hashlib.md5(requests.get('http://nacloweb.org/').text.encode('utf-8')).hexdigest()
-
 def usernamify(idtoname):
     return lambda x: '@'+idtoname[x] if x in idtoname else str(x)
 
@@ -216,7 +212,7 @@ class Bot:
 
         ]
 
-        if False: self.feeds = dict([x, guids(x)] for x in [
+        self.feeds = dict([x, guids(x)] for x in [
             'http://xkcd.com/rss.xml',
             'http://what-if.xkcd.com/feed.atom',
             'http://www.smbc-comics.com/rss.php',
@@ -237,7 +233,6 @@ class Bot:
         self.review = getreview()
         self.bda = getbda()
         self.kernel = getkernel()
-        self.naclo = getnaclo()
 
         self.recog = sr.Recognizer()
 
@@ -722,11 +717,6 @@ class Bot:
         if newkernel and self.kernel != newkernel:
             self.kernel = newkernel
             self.client.send_message(Chats.haxorz, 'kernel '+self.kernel+' released')
-
-        newnaclo = getnaclo()
-        if newnaclo and self.naclo != newnaclo:
-            self.naclo = newnaclo
-            self.client.send_message(Chats.naclo, '@KeyboardFire it changed')
 
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_message') or msg.reply_to_message is None: return None
