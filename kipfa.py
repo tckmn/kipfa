@@ -636,7 +636,7 @@ class Bot:
             'Developer`StartProtectedMode[];' + args], stdout=subprocess.PIPE)
         print(p.returncode)
         return '3 second timeout reached.' if p.returncode == -9 else \
-                p.stdout.decode('utf-8').strip() or '[no output]'
+                '```\u200b'+(p.stdout.decode('utf-8').rstrip() or '[no output]')+'```'
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
