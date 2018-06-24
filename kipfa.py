@@ -192,6 +192,7 @@ class Bot:
             'getshock':    (self.cmd_getshock,    Perm([], [])),
             'shock':       (self.cmd_shock,       Perm([kurt], [])),
             'mma':         (self.cmd_mma,         Perm([], [])),
+            'bf':          (self.cmd_bf,          Perm([], [])),
             'perm':        (self.cmd_perm,        Perm([admin], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
@@ -637,6 +638,16 @@ class Bot:
         print(p.returncode)
         return '3 second timeout reached.' if p.returncode == -9 else \
                 '```\u200b'+(p.stdout.decode('utf-8').rstrip() or '[no output]')+'```'
+
+    def cmd_bf(self, msg, args):
+        if args is None:
+            return 'Please provide Brainfuck code to run.'
+        p = subprocess.run(['./brainfuck', 'tmp'],
+                stdout=subprocess.PIPE,
+                input=args.encode('utf-8'))
+        if p.returncode == 1: return 'Compilation failed.'
+        if p.returncode == 124: return '5 second timeout reached.'
+        return p.stdout.decode('utf-8') or '[no output]'
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
