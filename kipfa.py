@@ -513,7 +513,7 @@ class Bot:
                     qdata = json.loads(requests.get('https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('.format(item['question_id'])).text)
                     self.soguess = qdata['items'][0]['tags']
                     self.quota = qdata['quota_remaining']
-                    return 'Guess a tag!\n```\n' + pre.text + '```'
+                    return 'Guess a tag!\n```' + pre.text.rstrip('\n') + '```'
             # somehow no answers matched the criteria
             return 'Something went horribly wrong'
         else:
