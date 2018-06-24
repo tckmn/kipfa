@@ -213,22 +213,7 @@ class Bot:
 
         ]
 
-        self.feeds = dict([x, guids(x)] for x in [
-            'http://xkcd.com/rss.xml',
-            'http://what-if.xkcd.com/feed.atom',
-            'http://www.smbc-comics.com/rss.php',
-            'http://feeds.feedburner.com/PoorlyDrawnLines?format=xml',
-            'http://www.commitstrip.com/en/feed/',
-            'https://mathwithbaddrawings.com/feed/',
-            'http://feeds.feedburner.com/InvisibleBread',
-            'http://www.archr.org/atom.xml',
-            'http://existentialcomics.com/rss.xml',
-            'http://feeds.feedburner.com/codinghorror?format=xml',
-            'http://thecodelesscode.com/rss',
-            'https://lichess.org/blog.atom',
-            'http://keyboardfire.com/blog.xml',
-            'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd'
-            ])
+        self.feeds = dict()
 
         self.uotd = getuotd()
         self.review = getreview()
@@ -822,6 +807,23 @@ class Bot:
             self.reply(msg, str(self.quota))
         elif txt == '!!daily' and msg.from_user.id == admin:
             self.daily()
+        elif txt == '!!initfeeds' and msg.from_user.id == admin:
+            self.feeds = dict([x, guids(x)] for x in [
+                'http://xkcd.com/rss.xml',
+                'http://what-if.xkcd.com/feed.atom',
+                'http://www.smbc-comics.com/rss.php',
+                'http://feeds.feedburner.com/PoorlyDrawnLines?format=xml',
+                'http://www.commitstrip.com/en/feed/',
+                'https://mathwithbaddrawings.com/feed/',
+                'http://feeds.feedburner.com/InvisibleBread',
+                'http://www.archr.org/atom.xml',
+                'http://existentialcomics.com/rss.xml',
+                'http://feeds.feedburner.com/codinghorror?format=xml',
+                'http://thecodelesscode.com/rss',
+                'https://lichess.org/blog.atom',
+                'http://keyboardfire.com/blog.xml',
+                'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd'
+                ])
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
