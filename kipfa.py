@@ -554,7 +554,7 @@ class Bot:
         '''
         Flypflap
         '''
-        return random.choice(['Go to the top', 'Flip-valve', 'Flytrap'])
+        return random.choice(['Go to the top', 'Flip-valve', 'Flytrap', 'Flapplop'])
 
     def cmd_vim(self, msg, args):
         rmsg = self.get_reply(msg)
