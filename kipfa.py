@@ -836,6 +836,8 @@ class Bot:
             self.reply(msg, str(self.quota))
         elif txt == '!!daily' and msg.from_user.id == admin:
             self.daily()
+        elif txt == '!!checkwebsites' and msg.from_user.id == admin:
+            self.checkwebsites()
         elif txt == '!!initfeeds' and msg.from_user.id == admin:
             self.feeds = dict([x, guids(x)] for x in [
                 'http://xkcd.com/rss.xml',
