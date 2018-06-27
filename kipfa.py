@@ -709,7 +709,7 @@ class Bot:
             if url == 'http://xkcd.com/rss.xml':
                 text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
             elif url == 'http://www.smbc-comics.com/rss.php':
-                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[10]
+                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
             self.send_feed(url, item.find('guid').text, text)
 
     def send_atom(self, url, feed):
