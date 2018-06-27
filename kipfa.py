@@ -24,6 +24,7 @@ import speech_recognition as sr
 
 import requests
 import urllib
+import zlib
 from bs4 import BeautifulSoup
 
 import data
@@ -193,6 +194,7 @@ class Bot:
             'shock':       (self.cmd_shock,       Perm([kurt], [])),
             'mma':         (self.cmd_mma,         Perm([], [])),
             'bf':          (self.cmd_bf,          Perm([], [])),
+            'tio':         (self.cmd_tio,         Perm([], [])),
             'perm':        (self.cmd_perm,        Perm([admin], [])),
             'restart':     (self.cmd_restart,     Perm([admin], []))
         }
@@ -633,6 +635,33 @@ class Bot:
         if p.returncode == 1: return 'Compilation failed.'
         if p.returncode == 124: return '5 second timeout reached.'
         return p.stdout.decode('utf-8') or '[no output]'
+
+    def cmd_tio(self, msg, args):
+        '''
+        todo: documentation
+        '''
+        err = " (try `!help tio' for more information)"
+        if args is None: return 'Basic usage: !tio [lang] [code]' + err
+        lang, rest = args.split(' ', 1) if ' ' in args else (args, '')
+        stdin = ''
+        stderr = False
+        args = []
+        code, *parts = rest.split('\n###')
+        for part in parts:
+            name, data = part.split('\n', 1) if '\n' in part else (part, '')
+            name = name.strip()
+            if name == 'stdin': stdin = data
+            elif name == 'stderr': stderr = True
+            elif name == 'arg': args.append(data)
+            else: return "Unknown section `{}'".format(name) + err
+        try:
+            data = requests.post('https://tio.run/cgi-bin/run/api/', zlib.compress(bytes('Vlang\u00001\u0000{}\u0000F.code.tio\u0000{}\u0000{}F.input.tio\u0000{}\u0000{}Vargs\u0000{}{}\u0000R'.format(lang, len(bytes(code, 'utf-8')), code, len(stdin), stdin, len(args), (len(args) * '\u0000{}').format(*args)), 'utf-8'), 9)[2:-4], timeout=5).text
+            print(data)
+            sep = data[:16]
+            data = data[16:-17].split(sep)
+            return ('\n--- stderr ---\n'.join(x.strip('\n') for x in data) if stderr else data[0]) or '[no output]'
+        except requests.exceptions.ConnectionError:
+            return '5 second timeout reached.'
 
     def cmd_perm(self, msg, args):
         usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
