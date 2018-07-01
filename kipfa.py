@@ -483,6 +483,7 @@ class Bot:
         {prefix}flepflap 3: (message). If neither a list nor a number is given,
         5 iterations will be used by default.
         '''
+        args = args.replace('\n', ' ')
         m = re.match(r'([0-9a-z- ]*):', args)
         hist = []
         if m is None: m = '5'
