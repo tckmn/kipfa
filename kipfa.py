@@ -646,7 +646,8 @@ class Bot:
         err = " (try `{}help tio` for more information)".format(self.prefix)
         if args is None: return 'Basic usage: {}tio [lang] [code]'.format(self.prefix) + err
         if args == 'err': return self.tioerr
-        lang, rest = args.split(' ', 1) if ' ' in args else (args, '')
+        lang, *rest = args.split(None, 1)
+        rest = rest[0] if len(rest) else ''
         stdin = ''
         stderr = False
         args = []
@@ -664,7 +665,6 @@ class Bot:
             if len(data) == 1: return data[0]  # error
             dout, derr = [x.strip('\n') for x in data[:2]]
             self.tioerr = derr
-            print('-'+repr(data[1])+'-')
             haserr = re.search('\nReal time: \\d+\\.\\d+ s\nUser time: \\d+\\.\\d+ s\nSys\\. time: \\d+\\.\\d+ s\nCPU share: \\d+\\.\\d+ %\nExit code: \\d+$', data[1]).start() > 0
             return (dout+'\n--- stderr ---\n'+derr if stderr else dout+('\n[stderr output - use {}tio err to view]'.format(self.prefix) if haserr else '')) or '[no output]'
         except requests.exceptions.ConnectionError:
