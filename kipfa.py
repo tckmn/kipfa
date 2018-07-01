@@ -249,6 +249,8 @@ class Bot:
         try: self.shocks = eval(open('shocks').read())
         except FileNotFoundError: self.shocks = {}
 
+        self.tioerr = ''
+
         self.dailied = False
 
     def cmd_help(self, msg, args):
@@ -642,6 +644,7 @@ class Bot:
         '''
         err = " (try `!help tio' for more information)"
         if args is None: return 'Basic usage: !tio [lang] [code]' + err
+        if args == 'err': return self.tioerr
         lang, rest = args.split(' ', 1) if ' ' in args else (args, '')
         stdin = ''
         stderr = False
@@ -656,10 +659,13 @@ class Bot:
             else: return "Unknown section `{}'".format(name) + err
         try:
             data = requests.post('https://tio.run/cgi-bin/run/api/', zlib.compress(bytes('Vlang\u00001\u0000{}\u0000F.code.tio\u0000{}\u0000{}F.input.tio\u0000{}\u0000{}Vargs\u0000{}{}\u0000R'.format(lang, len(bytes(code, 'utf-8')), code, len(stdin), stdin, len(args), (len(args) * '\u0000{}').format(*args)), 'utf-8'), 9)[2:-4], timeout=5).text
-            print(data)
-            sep = data[:16]
-            data = data[16:-17].split(sep)
-            return ('\n--- stderr ---\n'.join(x.strip('\n') for x in data) if stderr else data[0]) or '[no output]'
+            data = data.split(data[:16])[1:]
+            if len(data) == 1: return data[0]  # error
+            dout, derr = [x.strip('\n') for x in data[:2]]
+            self.tioerr = derr
+            print('-'+repr(data[1])+'-')
+            haserr = re.search('\nReal time: \\d+\\.\\d+ s\nUser time: \\d+\\.\\d+ s\nSys\\. time: \\d+\\.\\d+ s\nCPU share: \\d+\\.\\d+ %\nExit code: \\d+$', data[1]).start() > 0
+            return (dout+'\n--- stderr ---\n'+derr if stderr else dout+('\n[stderr output - use {}tio err to view]'.format(self.prefix) if haserr else '')) or '[no output]'
         except requests.exceptions.ConnectionError:
             return '5 second timeout reached.'
 
