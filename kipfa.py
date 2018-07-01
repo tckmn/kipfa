@@ -327,7 +327,7 @@ class Bot:
         Randomly expands an acronym, e.g. {prefix}expand mfw => mole fluently
         whimpers.
         '''
-        args = args.lower().replace(' ', '')
+        args = args.lower().replace(' ', '').replace('\n', '')
         if args == 'mfw':
             return 'meaningfulness what'
         elif any(not ('a' <= ch <= 'z') for ch in args):
