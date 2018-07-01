@@ -643,8 +643,8 @@ class Bot:
         '''
         todo: documentation
         '''
-        err = " (try `!help tio' for more information)"
-        if args is None: return 'Basic usage: !tio [lang] [code]' + err
+        err = " (try `{}help tio` for more information)".format(self.prefix)
+        if args is None: return 'Basic usage: {}tio [lang] [code]'.format(self.prefix) + err
         if args == 'err': return self.tioerr
         lang, rest = args.split(' ', 1) if ' ' in args else (args, '')
         stdin = ''
@@ -657,7 +657,7 @@ class Bot:
             if name == 'stdin': stdin = data
             elif name == 'stderr': stderr = True
             elif name == 'arg': args.append(data)
-            else: return "Unknown section `{}'".format(name) + err
+            else: return "Unknown section `{}`".format(name) + err
         try:
             data = requests.post('https://tio.run/cgi-bin/run/api/', zlib.compress(bytes('Vlang\u00001\u0000{}\u0000F.code.tio\u0000{}\u0000{}F.input.tio\u0000{}\u0000{}Vargs\u0000{}{}\u0000R'.format(lang, len(bytes(code, 'utf-8')), code, len(stdin), stdin, len(args), (len(args) * '\u0000{}').format(*args)), 'utf-8'), 9)[2:-4], timeout=5).text
             data = data.split(data[:16])[1:]
@@ -671,7 +671,7 @@ class Bot:
             return '5 second timeout reached.'
 
     def cmd_perm(self, msg, args):
-        usage = 'Usage: !perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'
+        usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'.format(self.prefix)
         already = 'That permission is already set.'
         success = 'Permission successfully set.'
         parts = (args or '').split(' ')
