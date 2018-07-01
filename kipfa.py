@@ -400,15 +400,15 @@ class Bot:
         '''
         if not args:
             return self.puzdesc()
-        if msg.from_id in self.puztime and self.puztime[msg.from_id] > time.time():
+        if msg.from_user.id in self.puztime and self.puztime[msg.from_user.id] > time.time():
             return 'Max one guess per person per hour.'
         if getattr(puzzle, 'guess'+str(self.puzlevel))(args):
             self.puzlevel += 1
-            self.puzhist += [msg.from_id]
+            self.puzhist += [msg.from_user.id]
             open('puzhist', 'w').write(repr(self.puzhist))
             return 'Correct! ' + self.puzdesc()
         else:
-            self.puztime[msg.from_id] = time.time() + 60*60
+            self.puztime[msg.from_user.id] = time.time() + 60*60
             open('puztime', 'w').write(repr(self.puztime))
             return 'Sorry, that\'s incorrect.'
 
@@ -543,7 +543,7 @@ class Bot:
         Calculates the WPM starting from when you run this command to the
         moment you send the last message before running the command again.
         '''
-        uid = msg.from_id
+        uid = msg.from_user.id
         if uid in self.wpm:
             (start, end, n) = self.wpm[uid]
             del self.wpm[uid]
