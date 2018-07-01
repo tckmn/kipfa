@@ -787,36 +787,41 @@ class Bot:
             return
 
         if txt[:len(self.prefix)] == self.prefix:
-            if txt[len(self.prefix)] == '|':
+            # check for initial pipe
+            buf = ''
+            idx = len(self.prefix)
+            if txt[idx] == '|':
                 rmsg = self.get_reply(msg)
                 buf = rmsg.text if rmsg else ''
-                for part in re.split(r'(?<!\\)\|', txt[len(self.prefix)+1:]):
-                    cmd, *args = part.replace('\\|', '|').split(' ', 1)
-                    args = args[0] if len(args) else '{}'
-                    if '{}' not in args and buf: args += ' {}'
-                    args = args.replace('{}', buf)
-                    if cmd in self.commands:
-                        (func, perms) = self.commands[cmd]
-                        if perms.check(msg.from_user.id):
-                            buf = func(msg, args) or ''
-                        else:
-                            self.reply(msg, 'You do not have the permission to execute the {} command.'.format(cmd))
-                            break
-                    else:
+                idx += 1
+
+            # check for intermediate pipes
+            part = ''
+            parts = []
+            parse = True
+            while idx <= len(txt):
+                if (idx == len(txt)) or (parse and txt[idx] == '|'):
+                    cmd, args = part.split(' ', 1) if ' ' in part else (part, '{}')
+                    if cmd not in self.commands:
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
                         break
-                else:
-                    self.reply(msg, buf)
-            else:
-                cmd, *args = txt[len(self.prefix):].split(' ', 1)
-                args = args[0] if len(args) else None
-                if cmd in self.commands:
                     (func, perms) = self.commands[cmd]
-                    if perms.check(msg.from_user.id):
-                        resp = func(msg, args)
-                        if resp: self.reply(msg, resp)
-                    else:
-                        self.reply(msg, 'You do not have the permission to execute that command.')
+                    if not perms.check(msg.from_user.id):
+                        self.reply(msg, 'You do not have permission to execute the {} command.'.format(cmd))
+                        break
+                    parts.append((func, args))
+                    part = ''
+                elif parse and txt[idx] == '\\':
+                    parse = False
+                else:
+                    part += txt[idx]
+                    parse = True
+                idx += 1
+            else:
+                for (func, args) in parts:
+                    buf = func(msg, args.replace('{}', buf))
+                self.reply(msg, buf)
+
         elif msg.from_user.id in self.wpm:
             (start, end, n) = self.wpm[msg.from_user.id]
             n += len(msg.text) + 1
