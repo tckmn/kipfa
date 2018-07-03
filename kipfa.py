@@ -165,11 +165,13 @@ class Bot:
     def __init__(self, client):
         self.client = client
         self.prefix = '!'
+        self.extprefix = '!!'
 
         self.commands = {
             'help':        (self.cmd_help,        Perm([], [])),
             'commands':    (self.cmd_commands,    Perm([], [])),
             'prefix':      (self.cmd_prefix,      Perm([admin], [])),
+            'extprefix':   (self.cmd_extprefix,   Perm([admin], [])),
             'getperm':     (self.cmd_getperm,     Perm([], [])),
             'js':          (self.cmd_js,          Perm([], [])),
             'steno':       (self.cmd_steno,       Perm([], [])),
@@ -275,6 +277,16 @@ class Bot:
         '''
         if args:
             self.prefix = args
+            return 'Prefix updated.'
+        else:
+            return 'Please specify a prefix to set.'
+
+    def cmd_extprefix(self, msg, args):
+        '''
+        Changes the prefix used to run a bot command with extended parsing.
+        '''
+        if args:
+            self.extprefix = args
             return 'Prefix updated.'
         else:
             return 'Please specify a prefix to set.'
@@ -791,17 +803,16 @@ class Bot:
             self.reply(msg, self.commands['frink'][0](msg, txt))
             return
 
-        if txt[:len(self.prefix)] == self.prefix:
+        is_cmd = txt[:len(self.prefix)] == self.prefix
+        is_ext = txt[:len(self.extprefix)] == self.extprefix
+        if is_cmd or is_ext:
             # check for initial modifiers
             buf = ''
-            idx = len(self.prefix)
-            esc = True
+            idx = len(self.extprefix) if is_ext else len(self.prefix)
             while True:
                 if txt[idx] == '|':
                     rmsg = self.get_reply(msg)
                     buf = rmsg.text if rmsg else ''
-                elif txt[idx] == '\\':
-                    esc = False
                 else: break
                 idx += 1
 
@@ -813,7 +824,7 @@ class Bot:
                 if not parse:
                     part += ('' if txt[idx] in '\\|' else '\\') + txt[idx]
                     parse = True
-                elif idx == len(txt) or txt[idx] == '|':
+                elif idx == len(txt) or (is_ext and txt[idx] == '|'):
                     cmd, args = part.split(' ', 1) if ' ' in part else (part, '{}')
                     if cmd not in self.commands:
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
@@ -824,7 +835,7 @@ class Bot:
                         break
                     parts.append((func, args))
                     part = ''
-                elif esc and txt[idx] == '\\': parse = False
+                elif is_ext and txt[idx] == '\\': parse = False
                 else: part += txt[idx]
                 idx += 1
             else:
