@@ -215,8 +215,6 @@ class Bot:
 
         ]
 
-        self.feeds = dict()
-
         self.uotd = getuotd()
         self.review = getreview()
         self.bda = getbda()
@@ -725,10 +723,14 @@ class Bot:
             self.send_feed(url, item.find('id').text, a['href'])
 
     def checkwebsites(self):
-        for url in self.feeds:
-            feed = getfeed(url)
-            if feed.tag == 'rss': self.send_rss(url, feed)
-            else: self.send_atom(url, feed)
+        if hasattr(self, 'feeds'):
+            for url in self.feeds:
+                feed = getfeed(url)
+                if feed.tag == 'rss': self.send_rss(url, feed)
+                else: self.send_atom(url, feed)
+        else:
+            client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
+            self.feeds = dict()
 
         newuotd = getuotd()
         if newuotd and self.uotd != newuotd:
