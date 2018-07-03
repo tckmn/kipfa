@@ -758,6 +758,9 @@ class Bot:
 
     def reply(self, msg, txt):
         print(txt)
+        txt = txt.strip()
+        if not txt: txt = '[reply empty]'
+        if len(txt) > 4096: txt = '[reply too long]'
         self.client.send_message(msg.chat.id, txt, reply_to_message_id=msg.message_id)
 
     def reply_photo(self, msg, path):
