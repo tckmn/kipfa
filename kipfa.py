@@ -792,12 +792,17 @@ class Bot:
             return
 
         if txt[:len(self.prefix)] == self.prefix:
-            # check for initial pipe
+            # check for initial modifiers
             buf = ''
             idx = len(self.prefix)
-            if txt[idx] == '|':
-                rmsg = self.get_reply(msg)
-                buf = rmsg.text if rmsg else ''
+            esc = True
+            while True:
+                if txt[idx] == '|':
+                    rmsg = self.get_reply(msg)
+                    buf = rmsg.text if rmsg else ''
+                elif txt[idx] == '\\':
+                    esc = False
+                else: break
                 idx += 1
 
             # check for intermediate pipes
@@ -805,7 +810,10 @@ class Bot:
             parts = []
             parse = True
             while idx <= len(txt):
-                if (idx == len(txt)) or (parse and txt[idx] == '|'):
+                if not parse:
+                    part += ('' if txt[idx] in '\\|' else '\\') + txt[idx]
+                    parse = True
+                elif idx == len(txt) or txt[idx] == '|':
                     cmd, args = part.split(' ', 1) if ' ' in part else (part, '{}')
                     if cmd not in self.commands:
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
@@ -816,11 +824,8 @@ class Bot:
                         break
                     parts.append((func, args))
                     part = ''
-                elif parse and txt[idx] == '\\':
-                    parse = False
-                else:
-                    part += txt[idx]
-                    parse = True
+                elif esc and txt[idx] == '\\': parse = False
+                else: part += txt[idx]
                 idx += 1
             else:
                 for (func, args) in parts:
