@@ -512,7 +512,7 @@ class Bot:
             (res2, sl2) = translate(res, 'en')
             hist += [res2]
             args = res2
-        return '\n'.join(hist)
+        return (hist[-1], '\n'.join(hist[:-1]))
 
     def cmd_soguess(self, msg, args, stdin):
         '''
@@ -833,9 +833,13 @@ class Bot:
                 else: part += txt[idx]
                 idx += 1
             else:
+                res = ''
                 for (func, args) in parts:
                     buf = func(msg, buf if args is None else args, buf)
-                self.reply(msg, buf)
+                    if type(buf) == tuple:
+                        res += buf[1] + '\n'
+                        buf = buf[0]
+                self.reply(msg, res + buf)
 
         elif msg.from_user.id in self.wpm:
             (start, end, n) = self.wpm[msg.from_user.id]
