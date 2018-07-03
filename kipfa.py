@@ -253,7 +253,7 @@ class Bot:
 
         self.dailied = False
 
-    def cmd_help(self, msg, args):
+    def cmd_help(self, msg, args, stdin):
         '''
         help helps helpfully, a helper helping helpees.
         '''
@@ -265,13 +265,13 @@ class Bot:
             else:
                 return 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix)
 
-    def cmd_commands(self, msg, args):
+    def cmd_commands(self, msg, args, stdin):
         '''
         Lists all of the bot's commands.
         '''
         return ', '.join(sorted(self.commands.keys()))
 
-    def cmd_prefix(self, msg, args):
+    def cmd_prefix(self, msg, args, stdin):
         '''
         Changes the prefix used to run a bot command.
         '''
@@ -281,7 +281,7 @@ class Bot:
         else:
             return 'Please specify a prefix to set.'
 
-    def cmd_extprefix(self, msg, args):
+    def cmd_extprefix(self, msg, args, stdin):
         '''
         Changes the prefix used to run a bot command with extended parsing.
         '''
@@ -291,7 +291,7 @@ class Bot:
         else:
             return 'Please specify a prefix to set.'
 
-    def cmd_getperm(self, msg, args):
+    def cmd_getperm(self, msg, args, stdin):
         '''
         Displays the current permissions (whitelist and blacklist) for a given
         command.
@@ -306,14 +306,14 @@ class Bot:
         else:
             return 'Please specify a command name.'
 
-    def cmd_js(self, msg, args):
+    def cmd_js(self, msg, args, stdin):
         '''
         Executes (sandboxed) JavaScript code and returns the value of the last
         expression.
         '''
         return os.popen("""node -e 'var Sandbox = require("./node_modules/sandbox"), s = new Sandbox(); s.options.timeout = 2000; s.run("{}", function(x) {{ console.log(x.result == "TimeoutError" ? "2 second timeout reached." : x.result); }});'""".format(args.replace('\\', '\\\\').replace("'", "'\\''").replace('"', '\\"').replace('\n', '\\n'))).read()
 
-    def cmd_steno(self, msg, args):
+    def cmd_steno(self, msg, args, stdin):
         '''
         Displays the given chord on a steno keyboard.
         '''
@@ -332,7 +332,7 @@ class Bot:
         else:
             return 'Invalid steno.'
 
-    def cmd_expand(self, msg, args):
+    def cmd_expand(self, msg, args, stdin):
         '''
         Randomly expands an acronym, e.g. {prefix}expand mfw => mole fluently
         whimpers.
@@ -347,7 +347,7 @@ class Bot:
         else:
             return ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args])
 
-    def cmd_bash(self, msg, args):
+    def cmd_bash(self, msg, args, stdin):
         '''
         Gives the highest voted out of 50 random bash.org quotes.
         '''
@@ -355,13 +355,13 @@ class Bot:
         quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
         return '```\n{}\n```'.format(quote)
 
-    def cmd_uptime(self, msg, args):
+    def cmd_uptime(self, msg, args, stdin):
         '''
         Tells how long the bot has been running since its last restart.
         '''
         return str(datetime.timedelta(seconds=int(time.time() - self.starttime)))
 
-    def cmd_frink(self, msg, args):
+    def cmd_frink(self, msg, args, stdin):
         '''
         Executes Frink code (https://frinklang.org/).
         '''
@@ -377,7 +377,7 @@ class Bot:
             ans += line
         return ans.decode('utf-8')
 
-    def cmd_transcribe(self, msg, args):
+    def cmd_transcribe(self, msg, args, stdin):
         '''
         Transcribes voice messages into text (very poorly) with PocketSphinx.
         '''
@@ -400,7 +400,7 @@ class Bot:
         except sr.UnknownValueError:
             return '(error)'
 
-    def cmd_puzzle(self, msg, args):
+    def cmd_puzzle(self, msg, args, stdin):
         '''
         Puzzles! See the current puzzle by using this command; you can make one
         guess per hour with {prefix}puzzle [guess]. The puzzles won't require
@@ -422,7 +422,7 @@ class Bot:
             open('puztime', 'w').write(repr(self.puztime))
             return 'Sorry, that\'s incorrect.'
 
-    def cmd_puzhist(self, msg, args):
+    def cmd_puzhist(self, msg, args, stdin):
         '''
         Returns the list of people in order who have solved the puzzles from
         the {prefix}puzzle command so far.
@@ -430,7 +430,7 @@ class Bot:
         return 'Puzzles solved so far by: ' + \
                 ', '.join(map(usernamify(self.idtoname), self.puzhist))
 
-    def cmd_leaderboard(self, msg, args):
+    def cmd_leaderboard(self, msg, args, stdin):
         '''
         Generates a sorted leaderboard of how many puzzles from the
         {prefix}puzzle command each person has solved.
@@ -439,7 +439,7 @@ class Bot:
         maxlen = max(len(x[0]) for x in data)
         return '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```'
 
-    def cmd_translate(self, msg, args):
+    def cmd_translate(self, msg, args, stdin):
         '''
         Translates its argument into English by default; to translate into
         another language, use e.g. {prefix}translate es: This is Spanish.
@@ -452,7 +452,7 @@ class Bot:
         (res, sl) = translate(args, tl)
         return '(from {}) {}'.format(langs[sl], res)
 
-    def cmd_flipflop(self, msg, args):
+    def cmd_flipflop(self, msg, args, stdin):
         '''
         Translates from English to another language and back repeatedly until
         reaching a fixed point. Specify a language with e.g. {prefix}flipflop
@@ -485,7 +485,7 @@ class Bot:
             args = res2
         return '\n'.join(hist)
 
-    def cmd_flepflap(self, msg, args):
+    def cmd_flepflap(self, msg, args, stdin):
         '''
         Translates repeatedly from English to different languages and back for
         a fixed number of iterations. Specify a list of languages with e.g.
@@ -514,7 +514,7 @@ class Bot:
             args = res2
         return '\n'.join(hist)
 
-    def cmd_soguess(self, msg, args):
+    def cmd_soguess(self, msg, args, stdin):
         '''
         Run this command once to get a code snippet from a random answer on
         Stack Overflow. Then guess the tags of the question and run it again to
@@ -536,7 +536,7 @@ class Bot:
             self.soguess = None
             return resp
 
-    def cmd_ddg(self, msg, args):
+    def cmd_ddg(self, msg, args, stdin):
         '''
         Returns a link to the first search result on DuckDuckGo for a given
         query.
@@ -548,7 +548,7 @@ class Bot:
         link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
         return link if link else 'No results.'
 
-    def cmd_wpm(self, msg, args):
+    def cmd_wpm(self, msg, args, stdin):
         '''
         Calculates the WPM starting from when you run this command to the
         moment you send the last message before running the command again.
@@ -563,17 +563,15 @@ class Bot:
         else:
             self.wpm[uid] = (msg.date, msg.date, 0)
 
-    def cmd_flypflap(self, msg, args):
+    def cmd_flypflap(self, msg, args, stdin):
         '''
         Flypflap
         '''
         return random.choice(['Go to the top', 'Flip-valve', 'Flytrap', 'Flapplop'])
 
-    def cmd_vim(self, msg, args):
-        rmsg = self.get_reply(msg)
-        data = rmsg.text if rmsg else ''
+    def cmd_vim(self, msg, args, stdin):
         with open('vim.txt', 'w') as f:
-            f.write(data)
+            f.write(stdin)
         print(subprocess.run(['timeout', '2',
             '/home/llama/neollama/kipfa/neovim/build/bin/nvim',
             '-Z',
@@ -582,11 +580,11 @@ class Bot:
             '+exe feedkeys("{}", "tx")|wq'.format(vimescape(args)),
             '/home/llama/neollama/kipfa/vim.txt']))
         with open('vim.txt', 'r') as f:
-            data = f.read()
+            stdin = f.read()
         os.remove('vim.txt')
-        return data
+        return stdin
 
-    def cmd_wump(self, msg, args):
+    def cmd_wump(self, msg, args, stdin):
         if not args:
             if self.wump: return 'A game of wump is already in progress!'
             else:
@@ -607,10 +605,10 @@ class Bot:
             resp += b' [terminated]'
         return resp.decode('utf-8')
 
-    def cmd_getshock(self, msg, args):
+    def cmd_getshock(self, msg, args, stdin):
         return '\n'.join('{}: {}'.format(k, v) for (k,v) in sorted(self.shocks.items(), key=lambda x: -x[1]))
 
-    def cmd_shock(self, msg, args):
+    def cmd_shock(self, msg, args, stdin):
         if not args:
             return 'Please specify who to shock.'
         num = re.search(r'[+-]?\d+$', args)
@@ -628,7 +626,7 @@ class Bot:
             f.write(repr(self.shocks))
         return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
 
-    def cmd_mma(self, msg, args):
+    def cmd_mma(self, msg, args, stdin):
         if not args:
             return 'Please provide Mathematica code to run.'
         p = subprocess.run(['timeout', '-s9', '3',
@@ -639,7 +637,7 @@ class Bot:
         return '3 second timeout reached.' if p.returncode == -9 else \
                 '```\u200b'+(p.stdout.decode('utf-8').rstrip() or '[no output]')+'```'
 
-    def cmd_bf(self, msg, args):
+    def cmd_bf(self, msg, args, stdin):
         if not args:
             return 'Please provide Brainfuck code to run.'
         p = subprocess.run(['./brainfuck', 'tmp'],
@@ -649,7 +647,7 @@ class Bot:
         if p.returncode == 124: return '5 second timeout reached.'
         return p.stdout.decode('utf-8') or '[no output]'
 
-    def cmd_tio(self, msg, args):
+    def cmd_tio(self, msg, args, stdin):
         '''
         todo: documentation
         '''
@@ -680,7 +678,7 @@ class Bot:
         except requests.exceptions.ConnectionError:
             return '5 second timeout reached.'
 
-    def cmd_perm(self, msg, args):
+    def cmd_perm(self, msg, args, stdin):
         usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'.format(self.prefix)
         already = 'That permission is already set.'
         success = 'Permission successfully set.'
@@ -707,7 +705,7 @@ class Bot:
             p.blacklist.remove(uid)
             return success
 
-    def cmd_restart(self, msg, args):
+    def cmd_restart(self, msg, args, stdin):
         '''
         Restarts the bot.
         '''
@@ -806,15 +804,10 @@ class Bot:
         is_cmd = txt[:len(self.prefix)] == self.prefix
         is_ext = txt[:len(self.extprefix)] == self.extprefix
         if is_cmd or is_ext:
-            # check for initial modifiers
-            buf = ''
+            # initialization
+            rmsg = self.get_reply(msg)
+            buf = rmsg.text if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
-            while True:
-                if txt[idx] == '|':
-                    rmsg = self.get_reply(msg)
-                    buf = rmsg.text if rmsg else ''
-                else: break
-                idx += 1
 
             # check for intermediate pipes
             part = ''
@@ -825,7 +818,8 @@ class Bot:
                     part += ('' if txt[idx] in '\\|' else '\\') + txt[idx]
                     parse = True
                 elif idx == len(txt) or (is_ext and txt[idx] == '|'):
-                    cmd, args = part.split(' ', 1) if ' ' in part else (part, '{}')
+                    part = part.strip()
+                    cmd, args = part.split(' ', 1) if ' ' in part else (part, None)
                     if cmd not in self.commands:
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
                         break
@@ -840,7 +834,7 @@ class Bot:
                 idx += 1
             else:
                 for (func, args) in parts:
-                    buf = func(msg, args.replace('{}', buf))
+                    buf = func(msg, buf if args is None else args, buf)
                 self.reply(msg, buf)
 
         elif msg.from_user.id in self.wpm:
