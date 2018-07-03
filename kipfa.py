@@ -255,7 +255,7 @@ class Bot:
         '''
         help helps helpfully, a helper helping helpees.
         '''
-        if args is None:
+        if not args:
             return 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix)
         else:
             if args in self.commands:
@@ -305,7 +305,7 @@ class Bot:
         '''
         Displays the given chord on a steno keyboard.
         '''
-        if args is None:
+        if not args:
             return 'Please specify a steno string.'
         m = re.search(r'[AO*\-EU]+', args)
         if re.fullmatch(r'S?T?K?P?W?H?R?A?O?\*?-?E?U?F?R?P?B?L?G?T?S?D?Z?', args) and m:
@@ -353,7 +353,7 @@ class Bot:
         '''
         Executes Frink code (https://frinklang.org/).
         '''
-        if args is None:
+        if not args:
             return 'Please provide Frink code to run.'
         self.frink.stdin.write(args.replace('\n', ' ').encode('utf-8') + b'\n')
         self.frink.stdin.flush()
@@ -529,7 +529,7 @@ class Bot:
         Returns a link to the first search result on DuckDuckGo for a given
         query.
         '''
-        if args is None:
+        if not args:
             return 'Please provide a search query.'
         url = 'https://duckduckgo.com/html/?q=' + urllib.parse.quote(args)
         res = BeautifulSoup(requests.get(url).text, 'lxml').find('div', class_='web-result')
@@ -575,7 +575,7 @@ class Bot:
         return data
 
     def cmd_wump(self, msg, args):
-        if args is None:
+        if not args:
             if self.wump: return 'A game of wump is already in progress!'
             else:
                 self.wump = subprocess.Popen(['wump'],
@@ -599,7 +599,7 @@ class Bot:
         return '\n'.join('{}: {}'.format(k, v) for (k,v) in sorted(self.shocks.items(), key=lambda x: -x[1]))
 
     def cmd_shock(self, msg, args):
-        if args is None:
+        if not args:
             return 'Please specify who to shock.'
         num = re.search(r'[+-]?\d+$', args)
         if num:
@@ -617,7 +617,7 @@ class Bot:
         return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
 
     def cmd_mma(self, msg, args):
-        if args is None:
+        if not args:
             return 'Please provide Mathematica code to run.'
         p = subprocess.run(['timeout', '-s9', '3',
             '/home/llama/neollama/mma/scriptdir/wolframscript',
@@ -628,7 +628,7 @@ class Bot:
                 '```\u200b'+(p.stdout.decode('utf-8').rstrip() or '[no output]')+'```'
 
     def cmd_bf(self, msg, args):
-        if args is None:
+        if not args:
             return 'Please provide Brainfuck code to run.'
         p = subprocess.run(['./brainfuck', 'tmp'],
                 stdout=subprocess.PIPE,
@@ -642,7 +642,7 @@ class Bot:
         todo: documentation
         '''
         err = " (try `{}help tio` for more information)".format(self.prefix)
-        if args is None: return 'Basic usage: {}tio [lang] [code]'.format(self.prefix) + err
+        if not args: return 'Basic usage: {}tio [lang] [code]'.format(self.prefix) + err
         if args == 'err': return self.tioerr
         lang, *rest = args.split(None, 1)
         rest = rest[0] if len(rest) else ''
