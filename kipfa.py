@@ -351,7 +351,6 @@ class Bot:
         '''
         Gives the highest voted out of 50 random bash.org quotes.
         '''
-        # quote = BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find('p', class_='qt').text
         quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
         return '```\n{}\n```'.format(quote)
 
