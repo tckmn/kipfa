@@ -148,17 +148,43 @@ def translate(text, tl):
 
 class Perm:
 
-    def __init__(self, whitelist, blacklist):
-        self.whitelist = whitelist
-        self.blacklist = blacklist
+    W = 'WHITELIST'
+    B = 'BLACKLIST'
+
+    def __init__(self, *rules):
+        self.rules = list(rules)
+
+    def add(self, rule, uid, duration):
+        now = time.time()
+        msg = 'Rule successfully added.'
+        for idx, (t, i, d) in enumerate(self.rules):
+            if rule == t and uid == i:
+                if duration == d:                           msg = 'Rule already exists.'
+                if duration and now < d < duration:         msg = 'Rule successfully lengthened.'
+                if not duration or now < duration < d:      msg = 'Rule successfully shortened.'
+                if duration and d < now and duration < now: msg = 'Rule does not exist.'
+                self.rules[idx] = (t, i, duration)
+                return msg
+        if duration and duration < now: return 'Rule does not exist.'
+        self.rules.append((rule, uid, duration))
+        return msg
+
+    def query(self, rule, uid):
+        now = time.time()
+        return any(t == rule and i == uid and (not d or now < d)
+                for (t, i, d) in self.rules)
 
     def fmt(self, idtoname):
-        return 'whitelist: {}, blacklist: {}'.format(
-                ', '.join(map(usernamify(idtoname), self.whitelist)) or '(none)',
-                ', '.join(map(usernamify(idtoname), self.blacklist)) or '(none)')
+        now = time.time()
+        return '\n'.join('{} {} (expires {})'.format(
+            t, usernamify(idtoname)(i),
+            ('in ' + str(datetime.timedelta(seconds=d-now))) if d else 'never')
+            for (t, i, d) in self.rules if not d or now < d)
 
-    def check(self, id):
-        return (not self.whitelist or id in self.whitelist) and (id not in self.blacklist)
+    def check(self, uid):
+        return not self.query(Perm.B, uid) and \
+                (all(t != Perm.W for (t, i, d) in self.rules) or \
+                self.query(Perm.W, uid))
 
 class Bot:
 
@@ -168,37 +194,37 @@ class Bot:
         self.extprefix = '!!'
 
         self.commands = {
-            'help':        (self.cmd_help,        Perm([], [])),
-            'commands':    (self.cmd_commands,    Perm([], [])),
-            'prefix':      (self.cmd_prefix,      Perm([admin], [])),
-            'extprefix':   (self.cmd_extprefix,   Perm([admin], [])),
-            'getperm':     (self.cmd_getperm,     Perm([], [])),
-            'js':          (self.cmd_js,          Perm([], [])),
-            'steno':       (self.cmd_steno,       Perm([], [])),
-            'expand':      (self.cmd_expand,      Perm([], [])),
-            'bash':        (self.cmd_bash,        Perm([], [])),
-            'uptime':      (self.cmd_uptime,      Perm([], [])),
-            'frink':       (self.cmd_frink,       Perm([], [])),
-            'transcribe':  (self.cmd_transcribe,  Perm([], [])),
-            'puzzle':      (self.cmd_puzzle,      Perm([], [])),
-            'puzhist':     (self.cmd_puzhist,     Perm([], [])),
-            'leaderboard': (self.cmd_leaderboard, Perm([], [])),
-            'translate':   (self.cmd_translate,   Perm([], [])),
-            'flipflop':    (self.cmd_flipflop,    Perm([], [])),
-            'flepflap':    (self.cmd_flepflap,    Perm([], [])),
-            'soguess':     (self.cmd_soguess,     Perm([], [])),
-            'ddg':         (self.cmd_ddg,         Perm([], [])),
-            'wpm':         (self.cmd_wpm,         Perm([], [])),
-            'Flypflap':    (self.cmd_flypflap,    Perm([], [])),
-            'vim':         (self.cmd_vim,         Perm([], [])),
-            'wump':        (self.cmd_wump,        Perm([], [])),
-            'getshock':    (self.cmd_getshock,    Perm([], [])),
-            'shock':       (self.cmd_shock,       Perm([kurt], [])),
-            'mma':         (self.cmd_mma,         Perm([], [])),
-            'bf':          (self.cmd_bf,          Perm([], [])),
-            'tio':         (self.cmd_tio,         Perm([], [])),
-            'perm':        (self.cmd_perm,        Perm([admin], [])),
-            'restart':     (self.cmd_restart,     Perm([admin], []))
+            'help':        (self.cmd_help,        Perm()),
+            'commands':    (self.cmd_commands,    Perm()),
+            'prefix':      (self.cmd_prefix,      Perm((Perm.W, admin, None))),
+            'extprefix':   (self.cmd_extprefix,   Perm((Perm.W, admin, None))),
+            'getperm':     (self.cmd_getperm,     Perm()),
+            'js':          (self.cmd_js,          Perm()),
+            'steno':       (self.cmd_steno,       Perm()),
+            'expand':      (self.cmd_expand,      Perm()),
+            'bash':        (self.cmd_bash,        Perm()),
+            'uptime':      (self.cmd_uptime,      Perm()),
+            'frink':       (self.cmd_frink,       Perm()),
+            'transcribe':  (self.cmd_transcribe,  Perm()),
+            'puzzle':      (self.cmd_puzzle,      Perm()),
+            'puzhist':     (self.cmd_puzhist,     Perm()),
+            'leaderboard': (self.cmd_leaderboard, Perm()),
+            'translate':   (self.cmd_translate,   Perm()),
+            'flipflop':    (self.cmd_flipflop,    Perm()),
+            'flepflap':    (self.cmd_flepflap,    Perm()),
+            'soguess':     (self.cmd_soguess,     Perm()),
+            'ddg':         (self.cmd_ddg,         Perm()),
+            'wpm':         (self.cmd_wpm,         Perm()),
+            'Flypflap':    (self.cmd_flypflap,    Perm()),
+            'vim':         (self.cmd_vim,         Perm()),
+            'wump':        (self.cmd_wump,        Perm()),
+            'getshock':    (self.cmd_getshock,    Perm()),
+            'shock':       (self.cmd_shock,       Perm((Perm.W, kurt, None))),
+            'mma':         (self.cmd_mma,         Perm()),
+            'bf':          (self.cmd_bf,          Perm()),
+            'tio':         (self.cmd_tio,         Perm()),
+            'perm':        (self.cmd_perm,        Perm((Perm.W, admin, None))),
+            'restart':     (self.cmd_restart,     Perm((Perm.W, admin, None)))
         }
 
         self.triggers = [
@@ -297,10 +323,7 @@ class Bot:
         command.
         '''
         if args in self.commands:
-            return 'Permissions for command {}: {}.'.format(
-                args,
-                self.commands[args][1].fmt(self.idtoname)
-                )
+            return self.commands[args][1].fmt(self.idtoname) or 'No rules set.'
         elif args:
             return 'Unknown command {}.'.format(args)
         else:
@@ -678,31 +701,25 @@ class Bot:
             return '5 second timeout reached.'
 
     def cmd_perm(self, msg, args, stdin):
-        usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user]'.format(self.prefix)
-        already = 'That permission is already set.'
-        success = 'Permission successfully set.'
+        usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user] [duration] (omit duration for permanent)'.format(self.prefix)
+
         parts = (args or '').split(' ')
-        if len(parts) != 3: return usage
-        (cmd, action, user) = parts
+        if not (3 <= len(parts) <= 4): return usage
+
+        (cmd, action, user, *duration) = parts
+        if user and user[0] == '@': user = user[1:]
+        duration = time.time() + float(duration[0]) if duration else None
+
         if cmd not in self.commands or user not in self.nametoid: return usage
+
         uid = self.nametoid[user]
         p = self.commands[cmd][1]
-        if action == 'whitelist':
-            if uid in p.whitelist: return already
-            p.whitelist.append(uid)
-            return success
-        elif action == 'blacklist':
-            if uid in p.blacklist: return already
-            p.blacklist.append(uid)
-            return success
-        elif action == 'unwhitelist':
-            if uid not in p.whitelist: return already
-            p.whitelist.remove(uid)
-            return success
-        elif action == 'unblacklist':
-            if uid not in p.blacklist: return already
-            p.blacklist.remove(uid)
-            return success
+
+        if   action == 'whitelist':   return p.add(Perm.W, uid, duration)
+        elif action == 'blacklist':   return p.add(Perm.B, uid, duration)
+        elif action == 'unwhitelist': return p.add(Perm.W, uid, 0)
+        elif action == 'unblacklist': return p.add(Perm.B, uid, 0)
+        return usage
 
     def cmd_restart(self, msg, args, stdin):
         '''
