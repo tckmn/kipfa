@@ -1,6 +1,9 @@
 git clone --recursive https://github.com/KeyboardFire/kipfa
 cd kipfa
 patch -p1 -d tools/neovim <neovim.patch
+cd tools/neovim
+make CMAKE_BUILD_TYPE=RelWithDebInfo
+cd ../..
 cat >config.ini <<x
 [pyrogram]
 api_id = 12345

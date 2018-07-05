@@ -610,7 +610,7 @@ class Bot:
         with open('vim.txt', 'w') as f:
             f.write(stdin)
         print(subprocess.run(['timeout', '2',
-            '/home/llama/neollama/kipfa/neovim/build/bin/nvim',
+            'tools/neovim/build/bin/nvim',
             '-Z',
             '-n',
             '--headless',
