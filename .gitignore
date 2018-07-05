@@ -1,5 +1,7 @@
-config.ini
-meemerino.session
-package-lock.json
 __pycache__
+config.ini
+kipfa.db
+kipfa.session
+messages.txt
+package-lock.json
 puzzle.py

@@ -1,8 +1,8 @@
 diff --git a/src/nvim/fileio.c b/src/nvim/fileio.c
-index 52686f665..0a0a352a1 100644
+index 0858436db..850836683 100644
 --- a/src/nvim/fileio.c
 +++ b/src/nvim/fileio.c
-@@ -262,6 +262,7 @@ readfile (
+@@ -274,6 +274,7 @@ readfile (
      int flags
  )
  {
@@ -10,7 +10,7 @@ index 52686f665..0a0a352a1 100644
    int fd = 0;
    int newfile = (flags & READ_NEW);
    int check_readonly;
-@@ -2226,6 +2227,7 @@ buf_write (
+@@ -2241,6 +2242,7 @@ buf_write (
      int filtering
  )
  {
@@ -18,3 +18,18 @@ index 52686f665..0a0a352a1 100644
    int fd;
    char_u          *backup = NULL;
    int backup_copy = FALSE;               /* copy the original file? */
+diff --git a/src/nvim/path.c b/src/nvim/path.c
+index b1e1bf3b2..55b45b4d6 100644
+--- a/src/nvim/path.c
++++ b/src/nvim/path.c
+@@ -535,6 +535,10 @@ bool path_has_exp_wildcard(const char_u *p)
+ static size_t path_expand(garray_T *gap, const char_u *path, int flags)
+   FUNC_ATTR_NONNULL_ALL
+ {
++  if (strncmp(path, "/home/llama/.config/nvim/", 25) &&
++      strcmp(path, "doc/**") &&
++      strcmp(path, "doc/**/*.txt")) return 0;
++  if (strstr(path, "..")) return 0;
+   return do_path_expand(gap, path, 0, flags, false);
+ }
+ 

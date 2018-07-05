@@ -36,7 +36,7 @@ def connect(): return sqlite3.connect('kipfa.db')
 
 # steno keyboard generator
 import data
-sys.path.insert(0, './steno-keyboard-generator')
+sys.path.append('./tools/steno-keyboard-generator')
 import keyboard
 
 # puzzle (kept in separate non-public file)
@@ -279,7 +279,7 @@ class Bot:
 
         self.recog = sr.Recognizer()
         self.starttime = time.time()
-        self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(),
+        self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.soguess = None
         self.quota = '(unknown)'
@@ -678,7 +678,7 @@ class Bot:
     def cmd_bf(self, msg, args, stdin):
         if not args:
             return 'Please provide Brainfuck code to run.'
-        p = subprocess.run(['./brainfuck', 'tmp'],
+        p = subprocess.run(['./tools/brainfuck', 'tmp'],
                 stdout=subprocess.PIPE,
                 input=args.encode('utf-8'))
         if p.returncode == 1: return 'Compilation failed.'
@@ -955,7 +955,7 @@ class Bot:
         #self.client.send_message(Chats.haxorz, text)
         #self.client.send_message(Chats.duolingo, text)
 
-client = Client('meemerino')
+client = Client('kipfa')
 bot = Bot(client)
 client.add_handler(MessageHandler(bot.callback))
 client.start()

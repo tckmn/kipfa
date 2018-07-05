@@ -1,0 +1,9 @@
+git clone --recursive https://github.com/KeyboardFire/kipfa
+cd kipfa
+patch -p1 -d tools/neovim <neovim.patch
+cat >config.ini <<x
+[pyrogram]
+api_id = 12345
+api_hash = 123456789abcdef123456789abcdef12
+x
+# other files not included in the repo: puzzle.py, messages.txt
