@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 from collections import Counter
-from threading import Thread
 from io import StringIO
+from threading import Thread
 import datetime
 import hashlib
 import html
@@ -17,20 +17,29 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
+# pyrogram
 from pyrogram import Client, MessageHandler
 from pyrogram.api import types, functions
 
+# pocketsphinx
 import speech_recognition as sr
 
+# network
+from bs4 import BeautifulSoup
 import requests
 import urllib
 import zlib
-from bs4 import BeautifulSoup
 
+# database
+import sqlite3
+def connect(): return sqlite3.connect('kipfa.db')
+
+# steno keyboard generator
 import data
 sys.path.insert(0, './steno-keyboard-generator')
 import keyboard
 
+# puzzle (kept in separate non-public file)
 import puzzle
 
 admin = 212594557
@@ -105,9 +114,6 @@ def getkernel():
     r = requests.get('https://kernel.org/')
     return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
 
-def usernamify(idtoname):
-    return lambda x: '@'+idtoname[x] if x in idtoname else str(x)
-
 langs = {
 'af': 'Afrikaans', 'sq': 'Albanian', 'am': 'Amharic', 'ar': 'Arabic', 'hy':
 'Armenian', 'az': 'Azeerbaijani', 'eu': 'Basque', 'be': 'Belarusian', 'bn':
@@ -150,6 +156,7 @@ class Perm:
 
     W = 'WHITELIST'
     B = 'BLACKLIST'
+    INF = float('inf')
 
     def __init__(self, *rules):
         self.rules = list(rules)
@@ -159,10 +166,10 @@ class Perm:
         msg = 'Rule successfully added.'
         for idx, (t, i, d) in enumerate(self.rules):
             if rule == t and uid == i:
-                if duration == d:                           msg = 'Rule already exists.'
-                if duration and now < d < duration:         msg = 'Rule successfully lengthened.'
-                if not duration or now < duration < d:      msg = 'Rule successfully shortened.'
-                if duration and d < now and duration < now: msg = 'Rule does not exist.'
+                if now < d < duration: msg = 'Rule successfully lengthened.'
+                if now < duration < d: msg = 'Rule successfully shortened.'
+                if d < now and duration < now: msg = 'Rule does not exist.'
+                if d == duration: msg = 'Rule already exists.'
                 self.rules[idx] = (t, i, duration)
                 return msg
         if duration and duration < now: return 'Rule does not exist.'
@@ -174,16 +181,17 @@ class Perm:
         return any(t == rule and i == uid and (not d or now < d)
                 for (t, i, d) in self.rules)
 
-    def fmt(self, idtoname):
+    def fmt(self, usernamify):
         now = time.time()
         return '\n'.join('{} {} (expires {})'.format(
-            t, usernamify(idtoname)(i),
-            ('in ' + str(datetime.timedelta(seconds=d-now))) if d else 'never')
-            for (t, i, d) in self.rules if not d or now < d)
+            t, usernamify(i),
+            ('never' if d == Perm.INF else 'in ' + str(datetime.timedelta(seconds=d-now))))
+            for (t, i, d) in self.rules if now < d)
 
     def check(self, uid):
+        now = time.time()
         return not self.query(Perm.B, uid) and \
-                (all(t != Perm.W for (t, i, d) in self.rules) or \
+                (all(t != Perm.W for (t, i, d) in self.rules if now < d) or \
                 self.query(Perm.W, uid))
 
 class Bot:
@@ -196,8 +204,8 @@ class Bot:
         self.commands = {
             'help':        (self.cmd_help,        Perm()),
             'commands':    (self.cmd_commands,    Perm()),
-            'prefix':      (self.cmd_prefix,      Perm((Perm.W, admin, None))),
-            'extprefix':   (self.cmd_extprefix,   Perm((Perm.W, admin, None))),
+            'prefix':      (self.cmd_prefix,      Perm((Perm.W, admin, Perm.INF))),
+            'extprefix':   (self.cmd_extprefix,   Perm((Perm.W, admin, Perm.INF))),
             'getperm':     (self.cmd_getperm,     Perm()),
             'js':          (self.cmd_js,          Perm()),
             'steno':       (self.cmd_steno,       Perm()),
@@ -219,12 +227,12 @@ class Bot:
             'vim':         (self.cmd_vim,         Perm()),
             'wump':        (self.cmd_wump,        Perm()),
             'getshock':    (self.cmd_getshock,    Perm()),
-            'shock':       (self.cmd_shock,       Perm((Perm.W, kurt, None))),
+            'shock':       (self.cmd_shock,       Perm((Perm.W, kurt, Perm.INF))),
             'mma':         (self.cmd_mma,         Perm()),
             'bf':          (self.cmd_bf,          Perm()),
             'tio':         (self.cmd_tio,         Perm()),
-            'perm':        (self.cmd_perm,        Perm((Perm.W, admin, None))),
-            'restart':     (self.cmd_restart,     Perm((Perm.W, admin, None)))
+            'perm':        (self.cmd_perm,        Perm((Perm.W, admin, Perm.INF))),
+            'restart':     (self.cmd_restart,     Perm((Perm.W, admin, Perm.INF)))
         }
 
         self.triggers = [
@@ -247,37 +255,37 @@ class Bot:
         self.review = getreview()
         self.bda = getbda()
         self.kernel = getkernel()
+        self.dailied = False
+
+        with connect() as conn:
+            conn.executescript('''
+            CREATE TABLE IF NOT EXISTS puztime (
+                userid      INTEGER UNIQUE NOT NULL,
+                nextguess   REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS puzhist (
+                level   INTEGER PRIMARY KEY,
+                userid  INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS nameid (
+                name    TEXT UNIQUE NOT NULL,
+                userid  INTEGER UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS shocks (
+                name    TEXT UNIQUE NOT NULL,
+                num     INTEGER NOT NULL
+            );
+            ''')
 
         self.recog = sr.Recognizer()
-
-        try: self.puztime = eval(open('puztime').read())
-        except FileNotFoundError: self.puztime = {}
-        try: self.puzhist = eval(open('puzhist').read())
-        except FileNotFoundError: self.puzhist = []
-        self.puzlevel = len(self.puzhist) + 1
-
-        try: self.nametoid = eval(open('nametoid').read())
-        except FileNotFoundError: self.nametoid = {}
-        self.idtoname = dict(reversed(x) for x in self.nametoid.items())
-
         self.starttime = time.time()
-
         self.frink = subprocess.Popen('java -cp frink.jar:. SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
         self.soguess = None
         self.quota = '(unknown)'
-
         self.wpm = dict()
-
         self.wump = None
-
-        try: self.shocks = eval(open('shocks').read())
-        except FileNotFoundError: self.shocks = {}
-
         self.tioerr = ''
-
-        self.dailied = False
 
     def cmd_help(self, msg, args, stdin):
         '''
@@ -323,7 +331,7 @@ class Bot:
         command.
         '''
         if args in self.commands:
-            return self.commands[args][1].fmt(self.idtoname) or 'No rules set.'
+            return self.commands[args][1].fmt(self.usernamify) or 'No rules set.'
         elif args:
             return 'Unknown command {}.'.format(args)
         else:
@@ -432,32 +440,39 @@ class Bot:
         '''
         if not args:
             return self.puzdesc()
-        if msg.from_user.id in self.puztime and self.puztime[msg.from_user.id] > time.time():
-            return 'Max one guess per person per hour.'
-        if getattr(puzzle, 'guess'+str(self.puzlevel))(args):
-            self.puzlevel += 1
-            self.puzhist += [msg.from_user.id]
-            open('puzhist', 'w').write(repr(self.puzhist))
-            return 'Correct! ' + self.puzdesc()
-        else:
-            self.puztime[msg.from_user.id] = time.time() + 60*60
-            open('puztime', 'w').write(repr(self.puztime))
-            return 'Sorry, that\'s incorrect.'
+        with connect() as conn:
+            if conn.execute('''
+                    SELECT nextguess > strftime('%s', 'now')
+                    FROM puztime
+                    WHERE userid = ?
+                    UNION ALL SELECT 0
+                    ''', (msg.from_user.id,)).fetchone()[0]:
+                return 'Max one guess per person per hour.'
+            if getattr(puzzle, 'guess'+str(self.puzlevel()))(args):
+                conn.execute('''
+                INSERT INTO puzhist (userid) VALUES (?);
+                ''', (msg.from_user.id,))
+                return 'Correct! ' + self.puzdesc()
+            else:
+                conn.execute('''
+                INSERT OR REPLACE INTO puztime
+                VALUES (?, strftime('%s', 'now') + 60*60);
+                ''', (msg.from_user.id,))
+                return "Sorry, that's incorrect."
 
     def cmd_puzhist(self, msg, args, stdin):
         '''
         Returns the list of people in order who have solved the puzzles from
         the {prefix}puzzle command so far.
         '''
-        return 'Puzzles solved so far by: ' + \
-                ', '.join(map(usernamify(self.idtoname), self.puzhist))
+        return 'Puzzles solved so far by: ' + ', '.join(self.puzhist())
 
     def cmd_leaderboard(self, msg, args, stdin):
         '''
         Generates a sorted leaderboard of how many puzzles from the
         {prefix}puzzle command each person has solved.
         '''
-        data = sorted(Counter(map(usernamify(self.idtoname), self.puzhist)).items(), key=lambda x: -x[1])
+        data = sorted(Counter(self.puzhist()).items(), key=lambda x: -x[1])
         maxlen = max(len(x[0]) for x in data)
         return '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```'
 
@@ -628,7 +643,9 @@ class Bot:
         return resp.decode('utf-8')
 
     def cmd_getshock(self, msg, args, stdin):
-        return '\n'.join('{}: {}'.format(k, v) for (k,v) in sorted(self.shocks.items(), key=lambda x: -x[1]))
+        return '\n'.join('{}: {}'.format(*x) for x in connect().execute('''
+            SELECT name, num FROM shocks ORDER BY num DESC
+            ''').fetchall())
 
     def cmd_shock(self, msg, args, stdin):
         if not args:
@@ -640,13 +657,12 @@ class Bot:
         else:
             num = 1
         args = ' '.join(args.split()).title()
-        if args not in self.shocks: self.shocks[args] = 0
-        self.shocks[args] += num
-        s = self.shocks[args]
-        if s == 0: del self.shocks[args]
-        with open('shocks', 'w') as f:
-            f.write(repr(self.shocks))
-        return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
+        with connect() as conn:
+            conn.execute('INSERT OR IGNORE INTO shocks (name, num) VALUES (?, 0)', (args,))
+            conn.execute('UPDATE shocks SET num = num + ? WHERE name = ?', (num, args))
+            s = conn.execute('SELECT num FROM shocks WHERE name = ?', (args,)).fetchone()[0]
+            if s == 0: conn.execute('DELETE FROM shocks WHERE name = ?', (args,))
+            return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
 
     def cmd_mma(self, msg, args, stdin):
         if not args:
@@ -708,17 +724,16 @@ class Bot:
 
         (cmd, action, user, *duration) = parts
         if user and user[0] == '@': user = user[1:]
-        duration = time.time() + float(duration[0]) if duration else None
+        duration = time.time() + float(duration[0]) if duration else Perm.INF
 
-        if cmd not in self.commands or user not in self.nametoid: return usage
-
-        uid = self.nametoid[user]
+        uid = connect().execute('SELECT userid FROM nameid WHERE name = ?', (user,)).fetchone()
+        if cmd not in self.commands or not uid: return usage
         p = self.commands[cmd][1]
 
-        if   action == 'whitelist':   return p.add(Perm.W, uid, duration)
-        elif action == 'blacklist':   return p.add(Perm.B, uid, duration)
-        elif action == 'unwhitelist': return p.add(Perm.W, uid, 0)
-        elif action == 'unblacklist': return p.add(Perm.B, uid, 0)
+        if   action == 'whitelist':   return p.add(Perm.W, uid[0], duration)
+        elif action == 'blacklist':   return p.add(Perm.B, uid[0], duration)
+        elif action == 'unwhitelist': return p.add(Perm.W, uid[0], 0)
+        elif action == 'unblacklist': return p.add(Perm.B, uid[0], 0)
         return usage
 
     def cmd_restart(self, msg, args, stdin):
@@ -793,11 +808,21 @@ class Bot:
         print(path)
         self.client.send_photo(msg.chat.id, path, reply_to_message_id=msg.message_id)
 
+    def puzlevel(self):
+        return connect().execute('SELECT COUNT(*) FROM puzhist').fetchone()[0] + 1
     def puzdesc(self):
-        return 'Level {}: {}'.format(
-                self.puzlevel,
-                getattr(puzzle, 'desc'+str(self.puzlevel))
-                )
+        puzlevel = self.puzlevel()
+        return 'Level {}: {}'.format(puzlevel, getattr(puzzle, 'desc'+str(puzlevel)))
+    def puzhist(self):
+        return [self.usernamify(x[0])
+                for x in connect().execute('''
+                SELECT userid FROM puzhist ORDER BY level ASC
+                ''').fetchall()]
+
+    def usernamify(self, userid):
+        return (connect().execute('''
+                SELECT "@" || name FROM nameid WHERE userid = ?
+                ''', (userid,)).fetchone() or [str(userid)])[0]
 
     def process_message(self, msg):
         self.client.forward_messages(Chats.ppnt, msg.chat.id, [msg.message_id])
@@ -866,19 +891,21 @@ class Bot:
             print(repr(vars(self)))
         elif txt == '!!updateusers' and msg.from_user.id == admin:
             count = 0
-            for ch in self.client.send(functions.messages.GetAllChats([])).chats:
-                if isinstance(ch, types.Channel):
-                    count += 1
-                    self.nametoid = {**self.nametoid, **dict(map(lambda u: [u.username, u.id], self.client.send(
-                        functions.channels.GetParticipants(
-                            self.client.peers_by_id[-1000000000000-ch.id],
-                            types.ChannelParticipantsRecent(),
-                            0, 0, 0
-                            )
-                        ).users))}
-            open('nametoid', 'w').write(repr(self.nametoid))
-            self.idtoname = dict(reversed(x) for x in self.nametoid.items())
-            self.reply(msg, 'updated {} users in {} chats'.format(len(self.nametoid), count))
+            with connect() as conn:
+                for ch in self.client.send(functions.messages.GetAllChats([])).chats:
+                    if isinstance(ch, types.Channel):
+                        count += 1
+                        conn.executemany('''
+                        INSERT OR REPLACE INTO nameid (name, userid) VALUES (?, ?)
+                        ''', [(u.username, u.id) for u in self.client.send(
+                            functions.channels.GetParticipants(
+                                self.client.peers_by_id[-1000000000000-ch.id],
+                                types.ChannelParticipantsRecent(),
+                                0, 0, 0
+                                )
+                            ).users if u.username])
+                nusers = conn.execute('SELECT COUNT(*) FROM nameid').fetchone()[0]
+                self.reply(msg, 'updated {} users in {} chats'.format(nusers, count))
         elif txt == '!!quota' and msg.from_user.id == admin:
             self.reply(msg, str(self.quota))
         elif txt == '!!daily' and msg.from_user.id == admin:
