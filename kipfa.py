@@ -395,8 +395,7 @@ class Bot:
         '''
         Executes Frink code (https://frinklang.org/).
         '''
-        if not args:
-            return 'Please provide Frink code to run.'
+        if not args: return 'Please provide Frink code to run.'
         self.frink.stdin.write(args.replace('\n', ' ').encode('utf-8') + b'\n')
         self.frink.stdin.flush()
         r = self.frink.stdout.readline()
@@ -839,7 +838,7 @@ class Bot:
         if not txt: return
 
         if msg.chat.id == Chats.frink:
-            self.reply(msg, self.commands['frink'][0](msg, txt))
+            self.reply(msg, self.commands['frink'][0](msg, txt, ''))
             return
 
         is_cmd = txt[:len(self.prefix)] == self.prefix
