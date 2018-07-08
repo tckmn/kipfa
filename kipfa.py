@@ -740,7 +740,6 @@ class Bot:
         Restarts the bot.
         '''
         self.reply(msg, 'restarting...')
-        self.client.stop()
         os._exit(0)
 
     def send_feed(self, url, guid, text):
