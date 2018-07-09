@@ -30,7 +30,6 @@ import puzzle
 from util import *
 
 admin = 212594557
-kurt  = 254619689
 class Chats:
     frink    = -1001277770483
     haxorz   = -1001059322065
@@ -95,47 +94,14 @@ def getkernel():
     r = requests.get('https://kernel.org/')
     return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
 
-class Perm:
-
-    W = 'WHITELIST'
-    B = 'BLACKLIST'
-    INF = float('inf')
-
-    def __init__(self, *rules):
-        self.rules = list(rules)
-
-    def add(self, rule, uid, duration):
-        now = time.time()
-        msg = 'Rule successfully added.'
-        for idx, (t, i, d) in enumerate(self.rules):
-            if rule == t and uid == i:
-                if now < d < duration: msg = 'Rule successfully lengthened.'
-                if now < duration < d: msg = 'Rule successfully shortened.'
-                if d < now and duration < now: msg = 'Rule does not exist.'
-                if d == duration: msg = 'Rule already exists.'
-                self.rules[idx] = (t, i, duration)
-                return msg
-        if duration and duration < now: return 'Rule does not exist.'
-        self.rules.append((rule, uid, duration))
-        return msg
-
-    def query(self, rule, uid):
-        now = time.time()
-        return any(t == rule and i == uid and (not d or now < d)
-                for (t, i, d) in self.rules)
-
-    def fmt(self):
-        now = time.time()
-        return '\n'.join('{} {} (expires {})'.format(
-            t, usernamify(i),
-            ('never' if d == Perm.INF else 'in ' + str(datetime.timedelta(seconds=d-now))))
-            for (t, i, d) in self.rules if now < d)
-
-    def check(self, uid):
-        now = time.time()
-        return not self.query(Perm.B, uid) and \
-                (all(t != Perm.W for (t, i, d) in self.rules if now < d) or \
-                self.query(Perm.W, uid))
+def perm_check(cmd, userid):
+    return connect().execute('''
+    SELECT NOT EXISTS(SELECT 1 FROM perm WHERE
+        ((rule = :b AND cmd = :cmd AND userid  = :userid) OR
+         (rule = :w AND cmd = :cmd AND userid != :userid)) AND
+        duration > (julianday('now')-2440587.5)*86400.0
+    )
+    ''', {'cmd': cmd, 'userid': userid, 'w': PERM_W, 'b': PERM_B}).fetchone()[0]
 
 class Bot:
 
@@ -143,40 +109,6 @@ class Bot:
         self.client = client
         self.prefix = '!'
         self.extprefix = '!!'
-
-        self.commands = {
-            'help':        (commands.cmd_help,        Perm()),
-            'commands':    (commands.cmd_commands,    Perm()),
-            'prefix':      (commands.cmd_prefix,      Perm((Perm.W, admin, Perm.INF))),
-            'extprefix':   (commands.cmd_extprefix,   Perm((Perm.W, admin, Perm.INF))),
-            'getperm':     (commands.cmd_getperm,     Perm()),
-            'js':          (commands.cmd_js,          Perm()),
-            'steno':       (commands.cmd_steno,       Perm()),
-            'expand':      (commands.cmd_expand,      Perm()),
-            'bash':        (commands.cmd_bash,        Perm()),
-            'uptime':      (commands.cmd_uptime,      Perm()),
-            'frink':       (commands.cmd_frink,       Perm()),
-            'transcribe':  (commands.cmd_transcribe,  Perm()),
-            'puzzle':      (commands.cmd_puzzle,      Perm()),
-            'puzhist':     (commands.cmd_puzhist,     Perm()),
-            'leaderboard': (commands.cmd_leaderboard, Perm()),
-            'translate':   (commands.cmd_translate,   Perm()),
-            'flipflop':    (commands.cmd_flipflop,    Perm()),
-            'flepflap':    (commands.cmd_flepflap,    Perm()),
-            'soguess':     (commands.cmd_soguess,     Perm()),
-            'ddg':         (commands.cmd_ddg,         Perm()),
-            'wpm':         (commands.cmd_wpm,         Perm()),
-            'Flypflap':    (commands.cmd_flypflap,    Perm()),
-            'vim':         (commands.cmd_vim,         Perm()),
-            'wump':        (commands.cmd_wump,        Perm()),
-            'getshock':    (commands.cmd_getshock,    Perm()),
-            'shock':       (commands.cmd_shock,       Perm((Perm.W, kurt, Perm.INF))),
-            'mma':         (commands.cmd_mma,         Perm()),
-            'bf':          (commands.cmd_bf,          Perm()),
-            'tio':         (commands.cmd_tio,         Perm()),
-            'perm':        (commands.cmd_perm,        Perm((Perm.W, admin, Perm.INF))),
-            'restart':     (commands.cmd_restart,     Perm((Perm.W, admin, Perm.INF)))
-        }
 
         self.triggers = [
 
@@ -202,6 +134,16 @@ class Bot:
 
         with connect() as conn:
             conn.executescript('''
+            CREATE TABLE IF NOT EXISTS nameid (
+                name    TEXT UNIQUE NOT NULL,
+                userid  INTEGER UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS perm (
+                rule        TEXT NOT NULL,
+                cmd         TEXT NOT NULL,
+                userid      INTEGER NOT NULL,
+                duration    REAL NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS puztime (
                 userid      INTEGER UNIQUE NOT NULL,
                 nextguess   REAL NOT NULL
@@ -209,10 +151,6 @@ class Bot:
             CREATE TABLE IF NOT EXISTS puzhist (
                 level   INTEGER PRIMARY KEY,
                 userid  INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS nameid (
-                name    TEXT UNIQUE NOT NULL,
-                userid  INTEGER UNIQUE NOT NULL
             );
             CREATE TABLE IF NOT EXISTS shocks (
                 name    TEXT UNIQUE NOT NULL,
@@ -309,7 +247,7 @@ class Bot:
         if not txt: return
 
         if msg.chat.id == Chats.frink:
-            self.reply(msg, self.commands['frink'][0](msg, txt, ''))
+            self.reply(msg, commands.frink(self, msg, txt, ''))
             return
 
         is_cmd = txt[:len(self.prefix)] == self.prefix
@@ -331,14 +269,13 @@ class Bot:
                 elif idx == len(txt) or (is_ext and txt[idx] == '|'):
                     part = part.strip()
                     cmd, args = part.split(' ', 1) if ' ' in part else (part, None)
-                    if cmd not in self.commands:
+                    if not hasattr(commands, 'cmd_'+cmd):
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
                         break
-                    (func, perms) = self.commands[cmd]
-                    if not perms.check(msg.from_user.id):
+                    if not perm_check(cmd, msg.from_user.id):
                         self.reply(msg, 'You do not have permission to execute the {} command.'.format(cmd))
                         break
-                    parts.append((func, args))
+                    parts.append((getattr(commands, 'cmd_'+cmd), args))
                     part = ''
                 elif is_ext and txt[idx] == '\\': parse = False
                 else: part += txt[idx]

@@ -17,6 +17,8 @@ import requests
 import urllib
 import zlib
 
+from util import *
+
 # steno keyboard generator
 import sys
 sys.path.append('./tools/steno-keyboard-generator')
@@ -74,6 +76,46 @@ def translate(text, tl):
         }).text)
     return (''.join(x[0] for x in resp[0]), resp[2])
 
+# permissions
+def perm_add(rule, cmd, userid, duration):
+    with connect() as conn:
+        vals = {'rule': rule, 'cmd': cmd, 'userid': userid, 'duration': duration}
+        # clean up expired permissions
+        conn.execute('DELETE FROM perm WHERE duration <= ?', (time.time(),))
+        msg = conn.execute('''
+        SELECT CASE
+            WHEN duration < :duration THEN 'Rule successfully lengthened.'
+            WHEN :duration < duration THEN 'Rule successfully shortened.'
+            ELSE 'Rule already exists.'
+        END FROM perm
+        WHERE rule = :rule AND cmd = :cmd AND userid = :userid
+        ''', vals).fetchone()
+        if msg:
+            conn.execute('''
+            UPDATE perm SET duration = :duration
+            WHERE rule = :rule AND cmd = :cmd AND userid = :userid
+            ''', vals)
+            return msg[0]
+        elif duration > 0:
+            conn.execute('''
+            INSERT INTO perm (rule, cmd, userid, duration)
+            VALUES (:rule, :cmd, :userid, :duration)
+            ''', vals)
+            return 'Rule successfully added.'
+        else: return 'Rule does not exist.'
+
+def perm_fmt(cmd):
+    return '\n'.join('{} {} (expires {})'.format(
+        row[0], usernamify(row[1]),
+        'never' if row[2] == INF else 'in ' + str(datetime.timedelta(seconds=row[2])))
+        for row in connect().execute('''
+        SELECT rule, userid, duration - (julianday('now')-2440587.5)*86400.0
+        FROM perm
+        WHERE cmd = ? AND (julianday('now')-2440587.5)*86400.0 < duration
+        ''', (cmd,)).fetchall())
+
+# commands start here
+
 def cmd_help(self, msg, args, stdin):
     '''
     help helps helpfully, a helper helping helpees.
@@ -81,8 +123,8 @@ def cmd_help(self, msg, args, stdin):
     if not args:
         return 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix)
     else:
-        if args in self.commands:
-            return ' '.join(self.commands[args][0].__doc__.format(prefix=self.prefix).split())
+        if 'cmd_'+args in globals():
+            return ' '.join(globals()['cmd_'+args].__doc__.format(prefix=self.prefix).split())
         else:
             return 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix)
 
@@ -90,7 +132,7 @@ def cmd_commands(self, msg, args, stdin):
     '''
     Lists all of the bot's commands.
     '''
-    return ', '.join(sorted(self.commands.keys()))
+    return ', '.join(sorted(s[4:] for s in globals() if s[:4] == 'cmd_'))
 
 def cmd_prefix(self, msg, args, stdin):
     '''
@@ -117,8 +159,8 @@ def cmd_getperm(self, msg, args, stdin):
     Displays the current permissions (whitelist and blacklist) for a given
     command.
     '''
-    if args in self.commands:
-        return self.commands[args][1].fmt() or 'No rules set.'
+    if 'cmd_'+args in globals():
+        return perm_fmt(args) or 'No rules set.'
     elif args:
         return 'Unknown command {}.'.format(args)
     else:
@@ -227,7 +269,7 @@ def cmd_puzzle(self, msg, args, stdin):
     if not args: return puzdesc()
     with connect() as conn:
         if conn.execute('''
-                SELECT nextguess > strftime('%s', 'now')
+                SELECT nextguess > (julianday('now')-2440587.5)*86400.0
                 FROM puztime
                 WHERE userid = ?
                 UNION ALL SELECT 0
@@ -241,7 +283,7 @@ def cmd_puzzle(self, msg, args, stdin):
         else:
             conn.execute('''
             INSERT OR REPLACE INTO puztime
-            VALUES (?, strftime('%s', 'now') + 60*60);
+            VALUES (?, (julianday('now')-2440587.5)*86400.0 + 60*60);
             ''', (msg.from_user.id,))
             return "Sorry, that's incorrect."
 
@@ -385,7 +427,7 @@ def cmd_wpm(self, msg, args, stdin):
     else:
         self.wpm[uid] = (msg.date, msg.date, 0)
 
-def cmd_flypflap(self, msg, args, stdin):
+def cmd_Flypflap(self, msg, args, stdin):
     '''
     Flypflap
     '''
@@ -512,16 +554,15 @@ def cmd_perm(self, msg, args, stdin):
 
     (cmd, action, user, *duration) = parts
     if user and user[0] == '@': user = user[1:]
-    duration = time.time() + float(duration[0]) if duration else Perm.INF
+    duration = time.time() + float(duration[0]) if duration else INF
 
     uid = connect().execute('SELECT userid FROM nameid WHERE name = ?', (user,)).fetchone()
-    if cmd not in self.commands or not uid: return usage
-    p = self.commands[cmd][1]
+    if 'cmd_'+cmd not in globals() or not uid: return usage
 
-    if   action == 'whitelist':   return p.add(Perm.W, uid[0], duration)
-    elif action == 'blacklist':   return p.add(Perm.B, uid[0], duration)
-    elif action == 'unwhitelist': return p.add(Perm.W, uid[0], 0)
-    elif action == 'unblacklist': return p.add(Perm.B, uid[0], 0)
+    if   action == 'whitelist':   return perm_add(PERM_W, cmd, uid[0], duration)
+    elif action == 'blacklist':   return perm_add(PERM_B, cmd, uid[0], duration)
+    elif action == 'unwhitelist': return perm_add(PERM_W, cmd, uid[0], 0)
+    elif action == 'unblacklist': return perm_add(PERM_B, cmd, uid[0], 0)
     return usage
 
 def cmd_restart(self, msg, args, stdin):
