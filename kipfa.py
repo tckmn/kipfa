@@ -156,6 +156,10 @@ class Bot:
                 name    TEXT UNIQUE NOT NULL,
                 num     INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS alias (
+                src     TEXT UNIQUE NOT NULL,
+                dest    TEXT NOT NULL
+            );
             ''')
 
         self.recog = sr.Recognizer()
@@ -267,7 +271,11 @@ class Bot:
                     part += ('' if txt[idx] in '\\|' else '\\') + txt[idx]
                     parse = True
                 elif idx == len(txt) or (is_ext and txt[idx] == '|'):
-                    part = part.strip()
+                    part = connect().execute('''
+                    SELECT dest || substr(:s, length(src)+1) FROM alias
+                    WHERE :s = src OR :s LIKE src || ' %'
+                    UNION ALL SELECT :s
+                    ''', {'s': part.strip()}).fetchone()[0]
                     cmd, args = part.split(' ', 1) if ' ' in part else (part, None)
                     if not hasattr(commands, 'cmd_'+cmd):
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))

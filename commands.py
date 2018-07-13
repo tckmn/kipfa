@@ -544,6 +544,13 @@ def cmd_tio(self, msg, args, stdin):
     except requests.exceptions.ConnectionError:
         return '5 second timeout reached.'
 
+def cmd_alias(self, msg, args, stdin):
+    if not args or '=' not in args:
+        return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
+    with connect() as conn:
+        conn.execute('INSERT INTO alias (src, dest) VALUES (?, ?)', args.split('=', 1))
+        return 'Command successfully aliased.'
+
 def cmd_perm(self, msg, args, stdin):
     usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user] [duration] (omit duration for permanent)'.format(self.prefix)
 
