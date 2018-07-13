@@ -97,8 +97,8 @@ def getkernel():
 def perm_check(cmd, userid):
     return connect().execute('''
     SELECT NOT EXISTS(SELECT 1 FROM perm WHERE
-        ((rule = :b AND cmd = :cmd AND userid  = :userid) OR
-         (rule = :w AND cmd = :cmd AND userid != :userid)) AND
+        ((rule = :b AND (cmd = 'ALL' OR cmd = :cmd) AND userid  = :userid) OR
+         (rule = :w AND (cmd = 'ALL' OR cmd = :cmd) AND userid != :userid)) AND
         duration > (julianday('now')-2440587.5)*86400.0
     )
     ''', {'cmd': cmd, 'userid': userid, 'w': PERM_W, 'b': PERM_B}).fetchone()[0]

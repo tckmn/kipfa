@@ -159,12 +159,10 @@ def cmd_getperm(self, msg, args, stdin):
     Displays the current permissions (whitelist and blacklist) for a given
     command.
     '''
-    if 'cmd_'+args in globals():
+    if not args: return 'Please specify a command name.'
+    if args == 'ALL' or 'cmd_'+args in globals():
         return perm_fmt(args) or 'No rules set.'
-    elif args:
-        return 'Unknown command {}.'.format(args)
-    else:
-        return 'Please specify a command name.'
+    else: return 'Unknown command {}.'.format(args)
 
 def cmd_js(self, msg, args, stdin):
     '''
@@ -557,7 +555,7 @@ def cmd_perm(self, msg, args, stdin):
     duration = time.time() + float(duration[0]) if duration else INF
 
     uid = connect().execute('SELECT userid FROM nameid WHERE name = ?', (user,)).fetchone()
-    if 'cmd_'+cmd not in globals() or not uid: return usage
+    if not (cmd == 'ALL' or 'cmd_'+cmd in globals()) or not uid: return usage
 
     if   action == 'whitelist':   return perm_add(PERM_W, cmd, uid[0], duration)
     elif action == 'blacklist':   return perm_add(PERM_B, cmd, uid[0], duration)
