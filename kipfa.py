@@ -78,21 +78,18 @@ def guids(url):
     else:
         return [x.find('id').text for x in feed.findall('entry')]
 
-def getuotd():
-    r = requests.get('https://lichess.org/training/daily')
-    return re.search(r'"puzzle":.*?"fen":"([^"]+)', r.text).group(1)
-
-def getreview():
-    r = requests.get('https://www.sjsreview.com/?s=')
-    return BeautifulSoup(r.text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20')
-
-def getbda():
-    r = requests.get('https://www.voanoticias.com/z/537')
-    return BeautifulSoup(r.text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href']
-
-def getkernel():
-    r = requests.get('https://kernel.org/')
-    return BeautifulSoup(r.text, 'lxml').find('td', id='latest_link').text.strip()
+class Req:
+    def __init__(self, query, callback):
+        self.query = query
+        self.callback = callback
+        self.val = query()
+    def go(self, client):
+        newval = query()
+        if newval and self.val != newval:
+            self.val = newval
+            self.callback(client, self.val)
+    def __repr__(self):
+        return self.val
 
 def perm_check(cmd, userid):
     return connect().execute('''
@@ -126,10 +123,6 @@ class Bot:
 
         ]
 
-        self.uotd = getuotd()
-        self.review = getreview()
-        self.bda = getbda()
-        self.kernel = getkernel()
         self.dailied = False
 
         with connect() as conn:
@@ -159,6 +152,10 @@ class Bot:
             CREATE TABLE IF NOT EXISTS alias (
                 src     TEXT UNIQUE NOT NULL,
                 dest    TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS feeds (
+                url     TEXT UNIQUE NOT NULL,
+                chat    INTEGER NOT NULL
             );
             ''')
 
@@ -197,29 +194,11 @@ class Bot:
                 feed = getfeed(url)
                 if feed.tag == 'rss': self.send_rss(url, feed)
                 else: self.send_atom(url, feed)
+            for req in self.reqs: req.go(self.client)
         else:
             client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
             self.feeds = dict()
-
-        newuotd = getuotd()
-        if newuotd and self.uotd != newuotd:
-            self.uotd = newuotd
-            self.client.send_message(Chats.haxorz, 'obtw new uotd')
-
-        newreview = getreview()
-        if newreview and self.review != newreview:
-            self.review = newreview
-            self.client.send_message(Chats.schmett, self.review)
-
-        newbda = getbda()
-        if newbda and self.bda != newbda:
-            self.bda = newbda
-            self.client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+self.bda)
-
-        newkernel = getkernel()
-        if newkernel and self.kernel != newkernel:
-            self.kernel = newkernel
-            self.client.send_message(Chats.haxorz, 'kernel '+self.kernel+' released')
+            self.reqs = []
 
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_message') or msg.reply_to_message is None: return None
@@ -344,6 +323,18 @@ class Bot:
                 'http://keyboardfire.com/blog.xml',
                 'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd'
                 ])
+            self.reqs = [
+                Req(lambda: re.search(r'"puzzle":.*?"fen":"([^"]+)', requests.get('https://lichess.org/training/daily').text).group(1),
+                    lambda client, val: client.send_message(Chats.haxorz, 'obtw new uotd')),
+                Req(lambda: BeautifulSoup(requests.get('https://www.sjsreview.com/?s=').text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
+                    lambda client, val: client.send_message(Chats.schmett, val)),
+                Req(lambda: BeautifulSoup(requests.get('https://www.voanoticias.com/z/537').text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
+                    lambda client, val: client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+val)),
+                Req(lambda: BeautifulSoup(requests.get('https://kernel.org/').text, 'lxml').find('td', id='latest_link').text.strip(),
+                    lambda client, val: client.send_message(Chats.haxorz, 'kernel '+val+' released')),
+                Req(lambda: BeautifulSoup(requests.get('https://twitter.com/billwurtz').text, 'html5lib').find('p', class_='tweet-text').text,
+                    lambda client, val: client.send_message(Chats.haxorz, val))
+            ]
 
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
