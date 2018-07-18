@@ -74,9 +74,9 @@ def getfeed(feed):
 def guids(url):
     feed = getfeed(url)
     if feed.tag == 'rss':
-        return [x.find('guid').text for x in feed[0].findall('item')]
+        return set(x.find('guid').text for x in feed[0].findall('item'))
     else:
-        return [x.find('id').text for x in feed.findall('entry')]
+        return set(x.find('id').text for x in feed.findall('entry'))
 
 class Req:
     def __init__(self, query, callback):
@@ -90,6 +90,32 @@ class Req:
             self.callback(client, self.val)
     def __repr__(self):
         return self.val
+
+class Feed:
+    def __init__(self, url, room):
+        self.url = url
+        self.room = room
+        self.guids = guids(url)
+    def go(self, client):
+        feed = getfeed(self.url)
+        if feed.tag == 'rss': self.send_rss(client, feed)
+        else: self.send_atom(client, feed)
+    def send_feed(self, client, guid, text):
+        if guid not in self.feeds[url]:
+            client.send_message(self.room, text)
+            self.guids.append(guid)
+    def send_rss(self, client, feed):
+        for item in feed[0].findall('item'):
+            text = item.find('link').text
+            if self.url == 'http://xkcd.com/rss.xml':
+                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
+            elif self.url == 'http://www.smbc-comics.com/rss.php':
+                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
+            self.send_feed(client, item.find('guid').text, text)
+    def send_atom(self, client, feed):
+        for item in feed.findall('entry'):
+            a = item.find('link').attrib
+            self.send_feed(client, item.find('id').text, a['href'])
 
 def perm_check(cmd, userid):
     return connect().execute('''
@@ -169,36 +195,12 @@ class Bot:
         self.wump = None
         self.tioerr = ''
 
-    def send_feed(self, url, guid, text):
-        if guid not in self.feeds[url]:
-            self.client.send_message(Chats.haxorz, text)
-            self.feeds[url].append(guid)
-
-    def send_rss(self, url, feed):
-        for item in feed[0].findall('item'):
-            text = item.find('link').text
-            if url == 'http://xkcd.com/rss.xml':
-                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
-            elif url == 'http://www.smbc-comics.com/rss.php':
-                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
-            self.send_feed(url, item.find('guid').text, text)
-
-    def send_atom(self, url, feed):
-        for item in feed.findall('entry'):
-            a = item.find('link').attrib
-            self.send_feed(url, item.find('id').text, a['href'])
-
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
-            for url in self.feeds:
-                feed = getfeed(url)
-                if feed.tag == 'rss': self.send_rss(url, feed)
-                else: self.send_atom(url, feed)
-            for req in self.reqs: req.go(self.client)
+            for feed in self.feeds: feed.go(self.client)
         else:
             client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
-            self.feeds = dict()
-            self.reqs = []
+            self.feeds = []
 
     def get_reply(self, msg):
         if not hasattr(msg, 'reply_to_message') or msg.reply_to_message is None: return None
@@ -307,23 +309,21 @@ class Bot:
         elif txt == '!!checkwebsites' and msg.from_user.id == admin:
             self.checkwebsites()
         elif txt == '!!initfeeds' and msg.from_user.id == admin:
-            self.feeds = dict([x, guids(x)] for x in [
-                'http://xkcd.com/rss.xml',
-                'http://what-if.xkcd.com/feed.atom',
-                'http://www.smbc-comics.com/rss.php',
-                'http://feeds.feedburner.com/PoorlyDrawnLines?format=xml',
-                'http://www.commitstrip.com/en/feed/',
-                'https://mathwithbaddrawings.com/feed/',
-                'http://feeds.feedburner.com/InvisibleBread',
-                'http://www.archr.org/atom.xml',
-                'http://existentialcomics.com/rss.xml',
-                'http://feeds.feedburner.com/codinghorror?format=xml',
-                'http://thecodelesscode.com/rss',
-                'https://lichess.org/blog.atom',
-                'http://keyboardfire.com/blog.xml',
-                'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd'
-                ])
-            self.reqs = [
+            self.feeds = [
+                Feed('http://xkcd.com/rss.xml', Chats.haxorz),
+                Feed('http://what-if.xkcd.com/feed.atom', Chats.haxorz),
+                Feed('http://www.smbc-comics.com/rss.php', Chats.haxorz),
+                Feed('http://feeds.feedburner.com/PoorlyDrawnLines?format=xml', Chats.haxorz),
+                Feed('http://www.commitstrip.com/en/feed/', Chats.haxorz),
+                Feed('https://mathwithbaddrawings.com/feed/', Chats.haxorz),
+                Feed('http://feeds.feedburner.com/InvisibleBread', Chats.haxorz),
+                Feed('http://www.archr.org/atom.xml', Chats.haxorz),
+                Feed('http://existentialcomics.com/rss.xml', Chats.haxorz),
+                Feed('http://feeds.feedburner.com/codinghorror?format=xml', Chats.haxorz),
+                Feed('http://thecodelesscode.com/rss', Chats.haxorz),
+                Feed('https://lichess.org/blog.atom', Chats.haxorz),
+                Feed('http://keyboardfire.com/blog.xml', Chats.haxorz),
+                Feed('https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd', Chats.haxorz),
                 Req(lambda: re.search(r'"puzzle":.*?"fen":"([^"]+)', requests.get('https://lichess.org/training/daily').text).group(1),
                     lambda client, val: client.send_message(Chats.haxorz, 'obtw new uotd')),
                 Req(lambda: BeautifulSoup(requests.get('https://www.sjsreview.com/?s=').text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
