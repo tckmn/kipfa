@@ -84,7 +84,7 @@ class Req:
         self.callback = callback
         self.val = query()
     def go(self, client):
-        newval = query()
+        newval = self.query()
         if newval and self.val != newval:
             self.val = newval
             self.callback(client, self.val)
