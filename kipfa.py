@@ -103,7 +103,7 @@ class Feed:
     def send_feed(self, client, guid, text):
         if guid not in self.guids:
             client.send_message(self.room, text)
-            self.guids.append(guid)
+            self.guids.add(guid)
     def send_rss(self, client, feed):
         for item in feed[0].findall('item'):
             text = item.find('link').text
