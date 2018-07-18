@@ -101,7 +101,7 @@ class Feed:
         if feed.tag == 'rss': self.send_rss(client, feed)
         else: self.send_atom(client, feed)
     def send_feed(self, client, guid, text):
-        if guid not in self.feeds[url]:
+        if guid not in self.guids:
             client.send_message(self.room, text)
             self.guids.append(guid)
     def send_rss(self, client, feed):
