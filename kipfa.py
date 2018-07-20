@@ -1,7 +1,4 @@
-#!/usr/bin/python3
-
 from io import StringIO
-from threading import Thread
 import datetime
 import json
 import os
@@ -13,7 +10,6 @@ import time
 import xml.etree.ElementTree as ET
 
 # pyrogram
-from pyrogram import Client, MessageHandler
 from pyrogram.api import types, functions
 
 # pocketsphinx
@@ -30,16 +26,6 @@ import puzzle
 from util import *
 
 admin = 212594557
-class Chats:
-    frink    = -1001277770483
-    haxorz   = -1001059322065
-    mariposa = -1001053893427
-    ppnt     = -1001232971188
-    schmett  = -1001119355580
-    testing  = -1001178303268
-    duolingo = -1001105416173
-    naclo    = -1001088995343
-    newdays  = -1001211597524
 
 def xtoi(s):
     s = s[1:]
@@ -56,7 +42,8 @@ def ordinal(n):
 
 def getfeed(feed):
     print('getfeed({})'.format(feed))
-    text = requests.get(feed).text
+    text = get(feed)
+    if text is None: return None
     if feed == 'http://www.archr.org/atom.xml':
         text = text.replace(' & ', ' &amp; ')
 
@@ -73,21 +60,26 @@ def getfeed(feed):
 
 def guids(url):
     feed = getfeed(url)
+    if feed is None: return None
     if feed.tag == 'rss':
         return set(x.find('guid').text for x in feed[0].findall('item'))
     else:
         return set(x.find('id').text for x in feed.findall('entry'))
 
 class Req:
-    def __init__(self, query, callback):
+    def __init__(self, url, query, callback):
+        self.url = url
         self.query = query
         self.callback = callback
-        self.val = query()
+        self.val = self.update()
+    def update(self):
+        resp = get(self.url)
+        return None if resp is None else self.query(resp)
     def go(self, client):
-        newval = self.query()
+        newval = self.update()
         if newval and self.val != newval:
+            if self.val: self.callback(client, newval)
             self.val = newval
-            self.callback(client, self.val)
     def __repr__(self):
         return self.val
 
@@ -97,7 +89,11 @@ class Feed:
         self.room = room
         self.guids = guids(url)
     def go(self, client):
+        if self.guids is None:
+            self.guids = guids(self.url)
+            return
         feed = getfeed(self.url)
+        if feed is None: return
         if feed.tag == 'rss': self.send_rss(client, feed)
         else: self.send_atom(client, feed)
     def send_feed(self, client, guid, text):
@@ -324,15 +320,20 @@ class Bot:
                 Feed('https://lichess.org/blog.atom', Chats.haxorz),
                 Feed('http://keyboardfire.com/blog.xml', Chats.haxorz),
                 Feed('https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd', Chats.haxorz),
-                Req(lambda: re.search(r'"puzzle":.*?"fen":"([^"]+)', requests.get('https://lichess.org/training/daily').text).group(1),
+                Req('https://lichess.org/training/daily',
+                    lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
                     lambda client, val: client.send_message(Chats.haxorz, 'obtw new uotd')),
-                Req(lambda: BeautifulSoup(requests.get('https://www.sjsreview.com/?s=').text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
+                Req('https://www.sjsreview.com/?s=',
+                    lambda text: BeautifulSoup(text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
                     lambda client, val: client.send_message(Chats.schmett, val)),
-                Req(lambda: BeautifulSoup(requests.get('https://www.voanoticias.com/z/537').text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
+                Req('https://www.voanoticias.com/z/537',
+                    lambda text: BeautifulSoup(text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
                     lambda client, val: client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+val)),
-                Req(lambda: BeautifulSoup(requests.get('https://kernel.org/').text, 'lxml').find('td', id='latest_link').text.strip(),
+                Req('https://kernel.org/',
+                    lambda text: BeautifulSoup(text, 'lxml').find('td', id='latest_link').text.strip(),
                     lambda client, val: client.send_message(Chats.haxorz, 'kernel '+val+' released')),
-                Req(lambda: BeautifulSoup(requests.get('https://twitter.com/billwurtz').text, 'html5lib').find('p', class_='tweet-text').text,
+                Req('https://twitter.com/billwurtz',
+                    lambda text: BeautifulSoup(text, 'html5lib').find('p', class_='tweet-text').text,
                     lambda client, val: client.send_message(Chats.haxorz, val))
             ]
 
@@ -341,6 +342,7 @@ class Bot:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
         if txt[0] == '$' and txt[-1] == '$' and len(txt) > 2:
+            # TODO adding a timeout is probably a good idea
             r = requests.get('https://latex.codecogs.com/png.latex?'+txt[1:-1], stream=True)
             with open('tex.png', 'wb') as f: shutil.copyfileobj(r.raw, f)
             self.reply_photo(msg, 'tex.png')
@@ -360,27 +362,3 @@ class Bot:
         #self.client.send_message(Chats.schmett, text)
         #self.client.send_message(Chats.haxorz, text)
         #self.client.send_message(Chats.duolingo, text)
-
-client = Client('kipfa')
-bot = Bot(client)
-client.add_handler(MessageHandler(bot.callback))
-client.start()
-client.send_message(Chats.testing, 'bot started')
-
-tick = 0
-while True:
-    tick += 1
-    try:
-        time.sleep(1)
-        lt = time.localtime()
-        if lt.tm_hour == 20 and lt.tm_min == 0:
-            if not bot.dailied:
-                bot.daily()
-                bot.dailied = True
-        else:
-            bot.dailied = False
-        if tick % 300 == 0:
-            thread = Thread(target=bot.checkwebsites)
-            thread.start()
-    except KeyboardInterrupt:
-        break

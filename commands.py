@@ -209,7 +209,9 @@ def cmd_bash(self, msg, args, stdin):
     '''
     Gives the highest voted out of 50 random bash.org quotes.
     '''
-    quote = max(BeautifulSoup(requests.get('http://bash.org/?random1').text, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
+    resp = get('http://bash.org/?random1')
+    if resp is None: return '[timeout]'
+    quote = max(BeautifulSoup(resp, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
     return '```\n{}\n```'.format(quote)
 
 def cmd_uptime(self, msg, args, stdin):
@@ -405,8 +407,9 @@ def cmd_ddg(self, msg, args, stdin):
     '''
     if not args:
         return 'Please provide a search query.'
-    url = 'https://duckduckgo.com/html/?q=' + urllib.parse.quote(args)
-    res = BeautifulSoup(requests.get(url).text, 'lxml').find('div', class_='web-result')
+    resp = get('https://duckduckgo.com/html/?q=' + urllib.parse.quote(args))
+    if resp is None: return '[timeout]'
+    res = BeautifulSoup(resp, 'lxml').find('div', class_='web-result')
     link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
     return link if link else 'No results.'
 
