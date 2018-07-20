@@ -113,7 +113,8 @@ class Bot:
 
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
-            for feed in self.feeds: feed.go(self.client)
+            for feed in self.feeds:
+                for msg in feed.go(): client.send_message(feed.room, msg)
         else:
             client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
             self.feeds = []

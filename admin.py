@@ -47,18 +47,19 @@ import xml.etree.ElementTree as ET
 import re
 
 class Req:
-    def __init__(self, url, query, callback):
+    def __init__(self, url, query, callback, room):
         self.url = url
         self.query = query
         self.callback = callback
+        self.room = room
         self.val = self.update()
     def update(self):
         resp = get(self.url)
         return None if resp is None else self.query(resp)
-    def go(self, client):
+    def go(self):
         newval = self.update()
         if newval and self.val != newval:
-            if self.val: self.callback(client, newval)
+            if self.val: yield self.callback(newval)
             self.val = newval
     def __repr__(self):
         return self.val
@@ -68,30 +69,30 @@ class Feed:
         self.url = url
         self.room = room
         self.guids = guids(url)
-    def go(self, client):
+    def go(self):
         if self.guids is None:
             self.guids = guids(self.url)
-            return
+            return []
         feed = getfeed(self.url)
-        if feed is None: return
-        if feed.tag == 'rss': self.send_rss(client, feed)
-        else: self.send_atom(client, feed)
-    def send_feed(self, client, guid, text):
+        if feed is None: return []
+        if feed.tag == 'rss': return self.send_rss(feed)
+        else: return self.send_atom(feed)
+    def send_feed(self, guid, text):
         if guid not in self.guids:
-            client.send_message(self.room, text)
+            yield text
             self.guids.add(guid)
-    def send_rss(self, client, feed):
+    def send_rss(self, feed):
         for item in feed[0].findall('item'):
             text = item.find('link').text
             if self.url == 'http://xkcd.com/rss.xml':
                 text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
             elif self.url == 'http://www.smbc-comics.com/rss.php':
                 text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
-            self.send_feed(client, item.find('guid').text, text)
-    def send_atom(self, client, feed):
+            for x in self.send_feed(item.find('guid').text, text): yield x
+    def send_atom(self, feed):
         for item in feed.findall('entry'):
             a = item.find('link').attrib
-            self.send_feed(client, item.find('id').text, a['href'])
+            for x in self.send_feed(item.find('id').text, a['href']): yield x
 
 def getfeed(feed):
     print('getfeed({})'.format(feed))
@@ -137,17 +138,22 @@ def cmd_initfeeds(bot, args):
         Feed('https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd', Chats.haxorz),
         Req('https://lichess.org/training/daily',
             lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
-            lambda client, val: client.send_message(Chats.haxorz, 'obtw new uotd')),
+            lambda val: 'obtw new uotd',
+            Chats.haxorz),
         Req('https://www.sjsreview.com/?s=',
             lambda text: BeautifulSoup(text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
-            lambda client, val: client.send_message(Chats.schmett, val)),
+            lambda val: val,
+            Chats.schmett),
         Req('https://www.voanoticias.com/z/537',
             lambda text: BeautifulSoup(text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
-            lambda client, val: client.send_message(Chats.mariposa, 'https://www.voanoticias.com'+val)),
+            lambda val: 'https://www.voanoticias.com'+val,
+            Chats.mariposa),
         Req('https://kernel.org/',
             lambda text: BeautifulSoup(text, 'lxml').find('td', id='latest_link').text.strip(),
-            lambda client, val: client.send_message(Chats.haxorz, 'kernel '+val+' released')),
+            lambda val: 'kernel '+val+' released',
+            Chats.haxorz),
         Req('https://twitter.com/billwurtz',
             lambda text: BeautifulSoup(text, 'html5lib').find('p', class_='tweet-text').text,
-            lambda client, val: client.send_message(Chats.haxorz, val))
+            lambda val: val,
+            Chats.haxorz)
     ]
