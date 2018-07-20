@@ -101,16 +101,19 @@ def getfeed(feed):
     if feed == 'http://www.archr.org/atom.xml':
         text = text.replace(' & ', ' &amp; ')
 
-    # https://stackoverflow.com/a/33997423/1223693
-    it = ET.iterparse(StringIO(text))
-    for _, el in it:
-        el.tag = el.tag[el.tag.find('}')+1:]
-        for at in el.attrib.keys():
-            if '}' in at:
-                el.attrib[at[at.find('}')+1:]] = el.attrib[at]
-                del el.attrib[at]
-
-    return it.root
+    try:
+        # https://stackoverflow.com/a/33997423/1223693
+        it = ET.iterparse(StringIO(text))
+        for _, el in it:
+            el.tag = el.tag[el.tag.find('}')+1:]
+            for at in el.attrib.keys():
+                if '}' in at:
+                    el.attrib[at[at.find('}')+1:]] = el.attrib[at]
+                    del el.attrib[at]
+        return it.root
+    except:
+        __import__('kipfa').client.send_message(Chats.testing, 'error in feed '+feed)
+        return None
 
 def guids(url):
     feed = getfeed(url)
