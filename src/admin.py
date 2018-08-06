@@ -85,9 +85,11 @@ class Feed:
         for item in feed[0].findall('item'):
             text = item.find('link').text
             if self.url == 'http://xkcd.com/rss.xml':
-                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
+                try: text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
+                except: pass
             elif self.url == 'http://www.smbc-comics.com/rss.php':
-                text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
+                try: text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
+                except: pass
             for x in self.send_feed(item.find('guid').text, text): yield x
     def send_atom(self, feed):
         for item in feed.findall('entry'):
