@@ -99,6 +99,13 @@ class Bot:
                 url     TEXT UNIQUE NOT NULL,
                 chat    INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS ttt (
+                gameid  INTEGER PRIMARY KEY,
+                p1      INTEGER NOT NULL,
+                p2      INTEGER NOT NULL,
+                turn    INTEGER NOT NULL,
+                board   TEXT NOT NULL
+            );
             ''')
 
         self.recog = sr.Recognizer()

@@ -547,6 +547,62 @@ def cmd_tio(self, msg, args, stdin):
     except requests.exceptions.ConnectionError:
         return '5 second timeout reached.'
 
+# def cmd_eval(self, msg, args, stdin):
+
+def ttt_fmt(board):
+    s = ''
+    for i1 in range(0, 9, 3):
+        for i2 in range(0, 9, 3):
+            s += ' '.join(''.join(x[i2:i2+3]) for x in board[i1:i1+3]) + '\n'
+        s += '\n'
+    return '```'+s.strip()+'```'
+
+def ttt_check(board):
+    for i in range(3):
+        s = set(board[i::3])
+        if s == {'x'}: return 'x'
+        if s == {'o'}: return 'o'
+        s = set(board[3*i:3*i+3])
+        if s == {'x'}: return 'x'
+        if s == {'o'}: return 'o'
+    s = set(board[0::4])
+    if s == {'x'}: return 'x'
+    if s == {'o'}: return 'o'
+    s = set(board[2:7:2])
+    if s == {'x'}: return 'x'
+    if s == {'o'}: return 'o'
+
+def cmd_ttt(self, msg, args, stdin):
+    with connect() as conn:
+        game = conn.execute('''
+        SELECT gameid, turn > 1, :u = p1, abs(turn), board
+        FROM ttt
+        WHERE (p1 = :u OR p2 = :u) AND turn != 0''', {'u': msg.from_user.id}).fetchone()
+        if game:
+            if game[1] != game[2]: return "It's not your turn!"
+            match = re.match(r'([1-9])\s*([1-9])$', args)
+            if not match: return 'Move format is two digits 1–9 to select first from the large and then the small board.'
+            i1, i2 = int(match.group(1)), int(match.group(2))
+            if game[3] != 10 and game[3] != i1: return 'You have to move in large board {}.'.format(game[3])
+            board = list(map(list, game[4].split()))
+            if board[i1-1][i2-1] != '·': return "Someone's already moved there."
+            board[i1-1][i2-1] = 'x' if game[2] else 'o'
+            check = ttt_check(board[i1-1])
+            if check: board[i1-1] = [check]*9
+            newturn = 10 if (ttt_check(board[i2-1]) or '·' not in board[i2-1]) else i2
+            won = ttt_check(list(map(ttt_check, board)))
+            if won: newturn = 0
+            conn.execute('UPDATE ttt SET turn = ?, board = ? WHERE gameid = ?',
+                    (newturn * (-1 if game[2] else 1), ' '.join(map(''.join, board)), game[0]))
+            return won.upper() + ' wins!' if won else ttt_fmt(board)
+        else:
+            uid = user2id(args)
+            if not uid: return 'To start a game with someone, use !ttt @username.'
+            p1, p2 = random.sample([msg.from_user.id, uid], 2)
+            conn.execute('INSERT INTO ttt (p1, p2, turn, board) VALUES (?, ?, ?, ?)',
+                    (p1, p2, 10, ' '.join(['·'*9]*9)))
+            return ('You go' if p1 == msg.from_user.id else args + ' goes') + ' first!'
+
 def cmd_alias(self, msg, args, stdin):
     if not args or '=' not in args:
         return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
@@ -561,10 +617,9 @@ def cmd_perm(self, msg, args, stdin):
     if not (3 <= len(parts) <= 4): return usage
 
     (cmd, action, user, *duration) = parts
-    if user and user[0] == '@': user = user[1:]
     duration = time.time() + float(duration[0]) if duration else INF
 
-    uid = connect().execute('SELECT userid FROM nameid WHERE name = ?', (user,)).fetchone()
+    uid = user2id(user)
     if not (cmd == 'ALL' or 'cmd_'+cmd in globals()) or not uid: return usage
 
     if   action == 'whitelist':   return perm_add(PERM_W, cmd, uid[0], duration)

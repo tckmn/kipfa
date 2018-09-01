@@ -2,11 +2,15 @@
 import sqlite3
 def connect(): return sqlite3.connect('kipfa.db')
 
-# turn userid into @username
+# convert between userid and @username
 def usernamify(userid):
     return (connect().execute('''
             SELECT "@" || name FROM nameid WHERE userid = ?
             ''', (userid,)).fetchone() or [str(userid)])[0]
+def user2id(name):
+    if name and name[0] == '@': name = name[1:]
+    uid = connect().execute('SELECT userid FROM nameid WHERE name = ?', (name,)).fetchone()
+    if uid: return uid[0]
 
 # permissions
 PERM_W = 'WHITELIST'
