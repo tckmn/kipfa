@@ -622,10 +622,10 @@ def cmd_perm(self, msg, args, stdin):
     uid = user2id(user)
     if not (cmd == 'ALL' or 'cmd_'+cmd in globals()) or not uid: return usage
 
-    if   action == 'whitelist':   return perm_add(PERM_W, cmd, uid[0], duration)
-    elif action == 'blacklist':   return perm_add(PERM_B, cmd, uid[0], duration)
-    elif action == 'unwhitelist': return perm_add(PERM_W, cmd, uid[0], 0)
-    elif action == 'unblacklist': return perm_add(PERM_B, cmd, uid[0], 0)
+    if   action == 'whitelist':   return perm_add(PERM_W, cmd, uid, duration)
+    elif action == 'blacklist':   return perm_add(PERM_B, cmd, uid, duration)
+    elif action == 'unwhitelist': return perm_add(PERM_W, cmd, uid, 0)
+    elif action == 'unblacklist': return perm_add(PERM_B, cmd, uid, 0)
     return usage
 
 def cmd_restart(self, msg, args, stdin):
