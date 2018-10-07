@@ -183,7 +183,7 @@ class Bot:
                     WHERE :s = src OR :s LIKE src || ' %'
                     UNION ALL SELECT :s
                     ''', {'s': part.strip()}).fetchone()[0]
-                    cmd, args = part.split(' ', 1) if ' ' in part else (part, None)
+                    cmd, args = part.split(None, 1) if ' ' in part or '\n' in part else (part, None)
                     if not hasattr(commands, 'cmd_'+cmd):
                         self.reply(msg, 'The command {} does not exist.'.format(cmd))
                         break
