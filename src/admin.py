@@ -54,8 +54,12 @@ class Req:
         self.room = room
         self.val = self.update()
     def update(self):
-        resp = get(self.url)
-        return None if resp is None else self.query(resp)
+        try:
+            resp = get(self.url)
+            return None if resp is None else self.query(resp)
+        except:
+            __import__('kipfa').client.send_message(Chats.testing, 'error in req '+self.url)
+            return None
     def go(self):
         newval = self.update()
         if newval and self.val != newval:
