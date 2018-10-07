@@ -35,7 +35,10 @@ def ordinal(n):
 
 def perm_check(cmd, userid):
     return connect().execute('''
-    SELECT NOT EXISTS(SELECT 1 FROM perm WHERE
+    SELECT EXISTS(SELECT 1 FROM perm WHERE
+        ((rule = :w AND (cmd = 'ALL' OR cmd = :cmd) AND userid  = :userid)) AND
+        duration > (julianday('now')-2440587.5)*86400.0
+    ) OR NOT EXISTS(SELECT 1 FROM perm WHERE
         ((rule = :b AND (cmd = 'ALL' OR cmd = :cmd) AND userid  = :userid) OR
          (rule = :w AND (cmd = 'ALL' OR cmd = :cmd) AND userid != :userid)) AND
         duration > (julianday('now')-2440587.5)*86400.0
