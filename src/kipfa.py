@@ -71,8 +71,8 @@ class Bot:
         with connect() as conn:
             conn.executescript('''
             CREATE TABLE IF NOT EXISTS nameid (
-                name    TEXT UNIQUE NOT NULL,
-                userid  INTEGER UNIQUE NOT NULL
+                name        TEXT UNIQUE NOT NULL,
+                userid      INTEGER UNIQUE NOT NULL
             );
             CREATE TABLE IF NOT EXISTS perm (
                 rule        TEXT NOT NULL,
@@ -85,27 +85,27 @@ class Bot:
                 nextguess   REAL NOT NULL
             );
             CREATE TABLE IF NOT EXISTS puzhist (
-                level   INTEGER PRIMARY KEY,
-                userid  INTEGER NOT NULL
+                level       INTEGER PRIMARY KEY,
+                userid      INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS shocks (
-                name    TEXT UNIQUE NOT NULL,
-                num     INTEGER NOT NULL
+                name        TEXT UNIQUE NOT NULL,
+                num         INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS alias (
-                src     TEXT UNIQUE NOT NULL,
-                dest    TEXT NOT NULL
+                src         TEXT UNIQUE NOT NULL,
+                dest        TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS feeds (
-                url     TEXT UNIQUE NOT NULL,
-                chat    INTEGER NOT NULL
+                url         TEXT NOT NULL,
+                chat        INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS ttt (
-                gameid  INTEGER PRIMARY KEY,
-                p1      INTEGER NOT NULL,
-                p2      INTEGER NOT NULL,
-                turn    INTEGER NOT NULL,
-                board   TEXT NOT NULL
+                gameid      INTEGER PRIMARY KEY,
+                p1          INTEGER NOT NULL,
+                p2          INTEGER NOT NULL,
+                turn        INTEGER NOT NULL,
+                board       TEXT NOT NULL
             );
             ''')
 
@@ -123,7 +123,8 @@ class Bot:
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
             for feed in self.feeds:
-                for msg in feed.go(): client.send_message(feed.room, msg)
+                for msg in feed.go():
+                    for room in feed.rooms: client.send_message(room, msg)
         else:
             client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
             self.feeds = []

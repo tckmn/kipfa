@@ -47,11 +47,11 @@ import xml.etree.ElementTree as ET
 import re
 
 class Req:
-    def __init__(self, url, query, callback, room):
+    def __init__(self, url, query, callback, rooms):
         self.url = url
         self.query = query
         self.callback = callback
-        self.room = room
+        self.rooms = rooms
         self.val = self.update()
     def update(self):
         try:
@@ -69,9 +69,9 @@ class Req:
         return self.val
 
 class Feed:
-    def __init__(self, url, room):
+    def __init__(self, url, rooms):
         self.url = url
-        self.room = room
+        self.rooms = rooms
         self.guids = guids(url)
     def go(self):
         if self.guids is None:
@@ -131,38 +131,30 @@ def guids(url):
 
 def cmd_initfeeds(bot, args):
     bot.feeds = [
-        Feed('http://xkcd.com/rss.xml', Chats.haxorz),
-        Feed('http://what-if.xkcd.com/feed.atom', Chats.haxorz),
-        Feed('http://www.smbc-comics.com/rss.php', Chats.haxorz),
-        Feed('http://feeds.feedburner.com/PoorlyDrawnLines?format=xml', Chats.haxorz),
-        Feed('http://www.commitstrip.com/en/feed/', Chats.haxorz),
-        Feed('https://mathwithbaddrawings.com/feed/', Chats.haxorz),
-        Feed('http://feeds.feedburner.com/InvisibleBread', Chats.haxorz),
-        # Feed('http://www.archr.org/atom.xml', Chats.haxorz),
-        Feed('http://existentialcomics.com/rss.xml', Chats.haxorz),
-        Feed('http://feeds.feedburner.com/codinghorror?format=xml', Chats.haxorz),
-        Feed('http://thecodelesscode.com/rss', Chats.haxorz),
-        Feed('https://lichess.org/blog.atom', Chats.haxorz),
-        Feed('http://keyboardfire.com/blog.xml', Chats.haxorz),
-        Feed('https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd', Chats.haxorz),
         Req('https://lichess.org/training/daily',
             lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
             lambda val: 'obtw new uotd',
-            Chats.haxorz),
+            [Chats.haxorz]),
         Req('https://www.sjsreview.com/?s=',
             lambda text: BeautifulSoup(text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
             lambda val: val,
-            Chats.schmett),
+            [Chats.schmett]),
         Req('https://www.voanoticias.com/z/537',
             lambda text: BeautifulSoup(text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
             lambda val: 'https://www.voanoticias.com'+val,
-            Chats.mariposa),
+            [Chats.mariposa]),
         Req('https://kernel.org/',
             lambda text: BeautifulSoup(text, 'lxml').find('td', id='latest_link').text.strip(),
             lambda val: 'kernel '+val+' released',
-            Chats.haxorz),
+            [Chats.haxorz]),
         Req('https://twitter.com/billwurtz',
             lambda text: BeautifulSoup(text, 'html5lib').find('p', class_='tweet-text').text,
             lambda val: val,
-            Chats.haxorz)
+            [Chats.haxorz])
     ]
+    feeds = dict()
+    with connect() as conn:
+        for (url, chat) in conn.execute('SELECT url, chat FROM feeds').fetchall():
+            if url in feeds: feeds[url].append(chat)
+            else: feeds[url] = [chat]
+    for (url, chats) in feeds.items(): bot.feeds.append(Feed(url, chats))

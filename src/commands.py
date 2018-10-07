@@ -603,6 +603,25 @@ def cmd_ttt(self, msg, args, stdin):
                     (p1, p2, 10, ' '.join(['·'*9]*9)))
             return ('You go' if p1 == msg.from_user.id else args + ' goes') + ' first!'
 
+def cmd_feed(self, msg, args, stdin):
+    usage = 'Usage: {}feed [add|del] [url]'.format(self.prefix)
+    parts = (args or '').split()
+    if len(parts) != 2: return usage
+    (cmd, url) = parts
+    with connect() as conn:
+        if cmd == 'add':
+            conn.execute('INSERT INTO feeds (url, chat) VALUES (?, ?)', (url, msg.chat.id))
+        elif cmd == 'del':
+            conn.execute('DELETE FROM feeds WHERE url = ? AND chat = ?', (url, msg.chat.id))
+        else: return usage
+    return 'Feed will be {} on next {}initfeeds.'.format(
+            'added' if cmd == 'add' else 'deleted',
+            __import__('admin').prefix)
+
+def cmd_getfeed(self, msg, args, stdin):
+    with connect() as conn:
+        return 'Feeds in this room: ' + (', '.join(x[0] for x in conn.execute('SELECT url FROM feeds WHERE chat = ?', (msg.chat.id,)).fetchall()) or '[none]')
+
 def cmd_alias(self, msg, args, stdin):
     if not args or '=' not in args:
         return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
