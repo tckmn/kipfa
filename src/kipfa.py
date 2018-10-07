@@ -68,8 +68,6 @@ class Bot:
 
         ]
 
-        self.dailied = False
-
         with connect() as conn:
             conn.executescript('''
             CREATE TABLE IF NOT EXISTS nameid (
@@ -111,15 +109,16 @@ class Bot:
             );
             ''')
 
-        self.recog = sr.Recognizer()
-        self.starttime = time.time()
+        self.dailied = False
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        self.soguess = None
         self.quota = '(unknown)'
+        self.recog = sr.Recognizer()
+        self.soguess = None
+        self.starttime = time.time()
+        self.tioerr = ''
         self.wpm = dict()
         self.wump = None
-        self.tioerr = ''
 
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
