@@ -1,3 +1,5 @@
+import traceback
+
 from util import *
 
 
@@ -6,7 +8,10 @@ userid = 212594557
 
 
 def cmd_eval(bot, args):
-    return repr(eval(args))
+    try:
+        return cf(repr(eval(args)))
+    except Exception as e:
+        return cf(traceback.format_exc())
 
 
 from pyrogram.api import types, functions

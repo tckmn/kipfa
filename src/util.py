@@ -38,3 +38,8 @@ def get(url):
     except requests.exceptions.Timeout:
         kipfa.client.send_message(Chats.testing, 'request timed out: ' + url)
         return None
+
+# markdown
+import re
+def cf(s):
+    return '```' + s.strip().replace('```', '`\u200b`\u200b`') + '```'
