@@ -138,7 +138,7 @@ def cmd_initfeeds(bot, args):
         Feed('http://www.commitstrip.com/en/feed/', Chats.haxorz),
         Feed('https://mathwithbaddrawings.com/feed/', Chats.haxorz),
         Feed('http://feeds.feedburner.com/InvisibleBread', Chats.haxorz),
-        Feed('http://www.archr.org/atom.xml', Chats.haxorz),
+        # Feed('http://www.archr.org/atom.xml', Chats.haxorz),
         Feed('http://existentialcomics.com/rss.xml', Chats.haxorz),
         Feed('http://feeds.feedburner.com/codinghorror?format=xml', Chats.haxorz),
         Feed('http://thecodelesscode.com/rss', Chats.haxorz),
