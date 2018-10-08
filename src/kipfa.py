@@ -14,11 +14,12 @@ import speech_recognition as sr
 import requests
 
 # local modules
-import data
-import commands
-import puzzle
-import admin
 from util import *
+import admin
+import commands
+import data
+import parse
+import puzzle
 
 def xtoi(s):
     s = s[1:]
@@ -32,18 +33,6 @@ def ordinal(n):
             'nd' if n % 10 == 2 else
             'rd' if n % 10 == 3 else
             'th')
-
-def perm_check(cmd, userid):
-    return connect().execute('''
-    SELECT EXISTS(SELECT 1 FROM perm WHERE
-        ((rule = :w AND (cmd = 'ALL' OR cmd = :cmd) AND userid  = :userid)) AND
-        duration > (julianday('now')-2440587.5)*86400.0
-    ) OR NOT EXISTS(SELECT 1 FROM perm WHERE
-        ((rule = :b AND (cmd = 'ALL' OR cmd = :cmd) AND userid  = :userid) OR
-         (rule = :w AND (cmd = 'ALL' OR cmd = :cmd) AND userid != :userid)) AND
-        duration > (julianday('now')-2440587.5)*86400.0
-    )
-    ''', {'cmd': cmd, 'userid': userid, 'w': PERM_W, 'b': PERM_B}).fetchone()[0]
 
 class Bot:
 
@@ -165,45 +154,10 @@ class Bot:
         is_cmd = txt[:len(self.prefix)] == self.prefix
         is_ext = txt[:len(self.extprefix)] == self.extprefix
         if is_cmd or is_ext:
-            # initialization
             rmsg = self.get_reply(msg)
             buf = rmsg.text if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
-
-            # check for intermediate pipes
-            part = ''
-            parts = []
-            parse = True
-            while idx <= len(txt):
-                if not parse:
-                    part += ('' if txt[idx] in '\\|' else '\\') + txt[idx]
-                    parse = True
-                elif idx == len(txt) or (is_ext and txt[idx] == '|'):
-                    part = connect().execute('''
-                    SELECT dest || substr(:s, length(src)+1) FROM alias
-                    WHERE :s = src OR :s LIKE src || ' %'
-                    UNION ALL SELECT :s
-                    ''', {'s': part.strip()}).fetchone()[0]
-                    cmd, args = part.split(None, 1) if ' ' in part or '\n' in part else (part, None)
-                    if not hasattr(commands, 'cmd_'+cmd):
-                        self.reply(msg, 'The command {} does not exist.'.format(cmd))
-                        break
-                    if not perm_check(cmd, msg.from_user.id):
-                        self.reply(msg, 'You do not have permission to execute the {} command.'.format(cmd))
-                        break
-                    parts.append((getattr(commands, 'cmd_'+cmd), args))
-                    part = ''
-                elif is_ext and txt[idx] == '\\': parse = False
-                else: part += txt[idx]
-                idx += 1
-            else:
-                res = ''
-                for (func, args) in parts:
-                    buf = func(self, msg, buf if args is None else args, buf)
-                    if type(buf) == tuple:
-                        res += buf[1] + '\n'
-                        buf = buf[0]
-                self.reply(msg, res + buf)
+            self.reply(msg, parse.parse(self, txt[idx:], buf, msg, is_ext))
 
         elif msg.from_user.id in self.wpm:
             (start, end, n) = self.wpm[msg.from_user.id]

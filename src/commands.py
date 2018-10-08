@@ -18,6 +18,7 @@ import urllib
 import zlib
 
 from util import *
+import parse  # for eval, exteval
 
 # steno keyboard generator
 import sys
@@ -547,7 +548,11 @@ def cmd_tio(self, msg, args, stdin):
     except requests.exceptions.ConnectionError:
         return '5 second timeout reached.'
 
-# def cmd_eval(self, msg, args, stdin):
+def cmd_eval(self, msg, args, stdin):
+    return parse.parse(self, args, '', msg, False)
+
+def cmd_exteval(self, msg, args, stdin):
+    return parse.parse(self, args, '', msg, True)
 
 def ttt_fmt(board):
     s = ''
