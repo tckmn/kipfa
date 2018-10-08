@@ -213,7 +213,7 @@ def cmd_bash(self, msg, args, stdin):
     resp = get('http://bash.org/?random1')
     if resp is None: return '[timeout]'
     quote = max(BeautifulSoup(resp, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
-    return '```\n{}\n```'.format(quote)
+    return cf(quote)
 
 def cmd_uptime(self, msg, args, stdin):
     '''
@@ -302,7 +302,7 @@ def cmd_leaderboard(self, msg, args, stdin):
     '''
     data = sorted(Counter(puzhist()).items(), key=lambda x: -x[1])
     maxlen = max(len(x[0]) for x in data)
-    return '```\n'+'\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)+'\n```'
+    return cf('\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data))
 
 def cmd_translate(self, msg, args, stdin):
     '''
@@ -393,7 +393,7 @@ def cmd_soguess(self, msg, args, stdin):
                 qdata = json.loads(requests.get('https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('.format(item['question_id'])).text)
                 self.soguess = qdata['items'][0]['tags']
                 self.quota = qdata['quota_remaining']
-                return 'Guess a tag!\n```' + pre.text.rstrip('\n') + '```'
+                return 'Guess a tag!\n' + cf(pre.text)
         # somehow no answers matched the criteria
         return 'Something went horribly wrong'
     else:
@@ -505,7 +505,7 @@ def cmd_mma(self, msg, args, stdin):
         'Developer`StartProtectedMode[];' + args], stdout=subprocess.PIPE)
     print(p.returncode)
     return '3 second timeout reached.' if p.returncode == -9 else \
-            '```\u200b'+(p.stdout.decode('utf-8').rstrip() or '[no output]')+'```'
+            cf('\u200b'+(p.stdout.decode('utf-8') or '[no output]'))
 
 def cmd_bf(self, msg, args, stdin):
     if not args:
@@ -560,7 +560,7 @@ def ttt_fmt(board):
         for i2 in range(0, 9, 3):
             s += ' '.join(''.join(x[i2:i2+3]) for x in board[i1:i1+3]) + '\n'
         s += '\n'
-    return '```'+s.strip()+'```'
+    return cf(s)
 
 def ttt_check(board):
     for i in range(3):
