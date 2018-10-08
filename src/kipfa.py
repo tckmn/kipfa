@@ -119,8 +119,7 @@ class Bot:
             self.feeds = []
 
     def get_reply(self, msg):
-        if not hasattr(msg, 'reply_to_message') or msg.reply_to_message is None: return None
-        return msg.reply_to_message
+        return msg.reply_to_message if hasattr(msg, 'reply_to_message') else None
 
     def reply(self, msg, txt):
         print(txt)
