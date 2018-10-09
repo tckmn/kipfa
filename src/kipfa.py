@@ -99,7 +99,7 @@ class Bot:
                 for msg in feed.go():
                     for room in feed.rooms: client.send_message(room, msg)
         else:
-            client.send_message(Chats.testing, 'WARNING: feeds not initialized @KeyboardFire')
+            client.send_message(Chats.testing, 'WARNING: feeds not initialized @'+admin.username)
             self.feeds = []
 
     def get_reply(self, msg):

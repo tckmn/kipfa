@@ -5,6 +5,7 @@ from util import *
 
 prefix = '>>'
 userid = 212594557
+username = 'KeyboardFire'
 
 
 def cmd_eval(bot, args):
