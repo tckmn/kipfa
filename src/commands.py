@@ -538,7 +538,7 @@ def cmd_tio(self, msg, args, stdin):
         elif name == 'arg': args.append(data)
         else: return "Unknown section `{}`".format(name) + err
     try:
-        data = requests.post('https://tio.run/cgi-bin/run/api/', zlib.compress(bytes('Vlang\u00001\u0000{}\u0000F.code.tio\u0000{}\u0000{}F.input.tio\u0000{}\u0000{}Vargs\u0000{}{}\u0000R'.format(lang, len(bytes(code, 'utf-8')), code, len(bytes(stdin, 'utf-8')), stdin, len(args), (len(args) * '\u0000{}').format(*args)), 'utf-8'), 9)[2:-4], timeout=5).text
+        data = requests.post('https://tio.run/cgi-bin/run/api/', zlib.compress(bytes('Vlang\u00001\u0000{}\u0000F.code.tio\u0000{}\u0000{}F.input.tio\u0000{}\u0000{}Vargs\u0000{}{}\u0000R'.format(lang, len(bytes(code, 'utf-8')), code, len(bytes(stdin, 'utf-8')), stdin, len(args), (len(args) * '\u0000{}').format(*args)), 'utf-8'), 9)[2:-4], timeout=5).content.decode('utf-8')
         data = data.split(data[:16])[1:]
         if len(data) == 1: return data[0]  # error
         dout, derr = [x.strip('\n') for x in data[:2]]
