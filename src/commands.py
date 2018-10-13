@@ -191,20 +191,30 @@ def cmd_steno(self, msg, args, stdin):
     else:
         return 'Invalid steno.'
 
+def expand(s):
+    return ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in s])
 def cmd_expand(self, msg, args, stdin):
     '''
     Randomly expands an acronym, e.g. {prefix}expand mfw => mole fluently
     whimpers.
     '''
-    args = args.lower().replace(' ', '').replace('\n', '')
-    if args == 'mfw':
-        return 'meaningfulness what'
-    elif any(not ('a' <= ch <= 'z') for ch in args):
-        return 'Letters only please.'
+    args = ''.join(c for c in args.lower() if 'a' <= c <= 'z')
+    if not args:
+        return 'Please give at least one letter.'
     elif len(args) > 10:
         return 'Maximum of 10 letters allowed.'
     else:
-        return ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in args])
+        prefix = ''
+        if len(args) > 2 and args[:2] == 'wt':
+            prefix = 'what the '
+            args = args[2:]
+        elif len(args) > 2 and args[:2] == 'om':
+            prefix = 'oh my '
+            args = args[2:]
+        elif len(args) > 3 and args[:3] == 'rof':
+            prefix = 'rolling on the floor '
+            args = args[3:]
+        return ' '.join((prefix + ' meaningfulness what '.join(expand(s) for s in args.split('mfw'))).split())
 
 def cmd_bash(self, msg, args, stdin):
     '''
