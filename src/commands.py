@@ -523,6 +523,10 @@ def cmd_bf(self, msg, args, stdin):
     p = subprocess.run(['./tools/brainfuck', 'tmp'],
             stdout=subprocess.PIPE,
             input=args.encode('utf-8'))
+    try:
+        os.remove('tmp.c')
+        os.remove('tmp.out')
+    except OSError: pass
     if p.returncode == 1: return 'Compilation failed.'
     if p.returncode == 124: return '5 second timeout reached.'
     return p.stdout.decode('utf-8') or '[no output]'
