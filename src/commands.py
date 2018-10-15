@@ -124,10 +124,12 @@ def cmd_help(self, msg, args, stdin):
     if not args:
         return 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix)
     else:
-        if 'cmd_'+args in globals():
-            return ' '.join(globals()['cmd_'+args].__doc__.format(prefix=self.prefix).split())
+        if args == 'arslan':
+            return cmd_arslan(0,0,0,0)
         elif args == 'COMMAND':
             return 'Fuck you'
+        elif 'cmd_'+args in globals():
+            return ' '.join(globals()['cmd_'+args].__doc__.format(prefix=self.prefix).split())
         else:
             return 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix)
 
@@ -139,7 +141,7 @@ def cmd_commands(self, msg, args, stdin):
 
 def cmd_prefix(self, msg, args, stdin):
     '''
-    Changes the prefix used to run a bot command.
+    Changes the prefix used to run a bot command. See also: {prefix}extprefix
     '''
     if args:
         self.prefix = args
@@ -149,7 +151,8 @@ def cmd_prefix(self, msg, args, stdin):
 
 def cmd_extprefix(self, msg, args, stdin):
     '''
-    Changes the prefix used to run a bot command with extended parsing.
+    Changes the prefix used to run a bot command with extended parsing. See
+    also: {prefix}prefix
     '''
     if args:
         self.extprefix = args
@@ -273,11 +276,10 @@ def cmd_transcribe(self, msg, args, stdin):
 
 def cmd_puzzle(self, msg, args, stdin):
     '''
-    Puzzles! See the current puzzle by using this command; you can make one
-    guess per hour with {prefix}puzzle [guess]. The puzzles won't require
-    any in-depth domain-specific knowledge (but use of the internet is
-    encouraged and sometimes required). See also: {prefix}puzhist,
-    {prefix}leaderboard.
+    See the current puzzle by using this command; you can make one guess per
+    hour with {prefix}puzzle [guess]. The puzzles won't require any in-depth
+    domain-specific knowledge (but use of the internet is encouraged and
+    sometimes required). See also: {prefix}puzhist, {prefix}leaderboard
     '''
     if not args: return puzdesc()
     with connect() as conn:
@@ -319,7 +321,8 @@ def cmd_leaderboard(self, msg, args, stdin):
 def cmd_translate(self, msg, args, stdin):
     '''
     Translates its argument into English by default; to translate into
-    another language, use e.g. {prefix}translate es: This is Spanish.
+    another language, use e.g. {prefix}translate es: This is Spanish. See also:
+    {prefix}flipflop, {prefix}flepflap
     '''
     m = re.match(r'([a-z-]*):', args)
     tl = 'en'
@@ -332,10 +335,9 @@ def cmd_translate(self, msg, args, stdin):
 def cmd_flipflop(self, msg, args, stdin):
     '''
     Translates from English to another language and back repeatedly until
-    reaching a fixed point. Specify a language with e.g. {prefix}flipflop
-    ja: A towel is about the most massively useful thing an interstellar
-    hitchhiker can have. If no language is specified, a random one will be
-    chosen.
+    reaching a fixed point. Specify a language with e.g. {prefix}flipflop ja:
+    [message]. If no language is specified, a random one will be chosen. See
+    also: {prefix}translate, {prefix}flepflap
     '''
     m = re.match(r'([a-z-]*):', args)
     hist = []
@@ -366,9 +368,10 @@ def cmd_flepflap(self, msg, args, stdin):
     '''
     Translates repeatedly from English to different languages and back for
     a fixed number of iterations. Specify a list of languages with e.g.
-    {prefix}flepflap ja es ko: (message), or a number of iterations with
-    {prefix}flepflap 3: (message). If neither a list nor a number is given,
-    5 iterations will be used by default.
+    {prefix}flepflap ja es ko: [message], or a number of iterations with
+    {prefix}flepflap 3: [message]. If neither a list nor a number is given,
+    5 iterations will be used by default. See also: {prefix}translate,
+    {prefix}flipflop
     '''
     args = args.replace('\n', ' ')
     m = re.match(r'([0-9a-z- ]*):', args)
@@ -448,6 +451,10 @@ def cmd_Flypflap(self, msg, args, stdin):
     return random.choice(['Go to the top', 'Flip-valve', 'Flytrap', 'Flapplop'])
 
 def cmd_vim(self, msg, args, stdin):
+    '''
+    Places input in a file, evaluates argument as vim keystrokes, then returns
+    the result.
+    '''
     with open('vim.txt', 'w') as f:
         f.write(stdin)
     print(subprocess.run(['timeout', '2',
@@ -466,6 +473,9 @@ def cmd_vim(self, msg, args, stdin):
     return stdin
 
 def cmd_wump(self, msg, args, stdin):
+    '''
+    Plays the `wump` game from `bsdgames` (Hunt the Wumpus).
+    '''
     if not args:
         if self.wump: return 'A game of wump is already in progress!'
         else:
@@ -487,11 +497,19 @@ def cmd_wump(self, msg, args, stdin):
     return resp.decode('utf-8')
 
 def cmd_getshock(self, msg, args, stdin):
+    '''
+    Gets a list of people Kurt has shocked. See also: {prefix}shock
+    '''
     return '\n'.join('{}: {}'.format(*x) for x in connect().execute('''
         SELECT name, num FROM shocks ORDER BY num DESC
         ''').fetchall())
 
 def cmd_shock(self, msg, args, stdin):
+    '''
+    The God of Thunder, the Almighty, the omniscient Kurt Louie in his infinite
+    wisdom and grace bestows upon us mere mortals the gift of his electrifying
+    rage. See also: {prefix}getshock
+    '''
     if not args:
         return 'Please specify who to shock.'
     num = re.search(r'[+-]?\d+$', args)
@@ -509,6 +527,9 @@ def cmd_shock(self, msg, args, stdin):
         return '{} now has {} shock{}'.format(args, s, '' if s == 1 else 's')
 
 def cmd_mma(self, msg, args, stdin):
+    '''
+    Evaluates Mathematica code.
+    '''
     if not args:
         return 'Please provide Mathematica code to run.'
     p = subprocess.run(['timeout', '-s9', '3',
@@ -520,6 +541,9 @@ def cmd_mma(self, msg, args, stdin):
             cf('\u200b'+(p.stdout.decode('utf-8') or '[no output]'))
 
 def cmd_bf(self, msg, args, stdin):
+    '''
+    Evaluates Brainfuck code. Input not yet supported.
+    '''
     if not args:
         return 'Please provide Brainfuck code to run.'
     p = subprocess.run(['./tools/brainfuck', 'tmp'],
@@ -535,7 +559,13 @@ def cmd_bf(self, msg, args, stdin):
 
 def cmd_tio(self, msg, args, stdin):
     '''
-    todo: documentation
+    Run {prefix}tio [language] [code] to evaluate code in a given language on
+    Try it online! (https://tio.run/). Specify additional sections on a
+    separate line consisting of three hashes (###) followed by the section
+    name, which can be any of: stdin (provide input), arg (provide any number
+    of command line arguments), or stderr (specify this section to view stderr
+    output in addition to stdout; you may also retrospectively do this with
+    {prefix}tio err).
     '''
     err = " (try `{}help tio` for more information)".format(self.prefix)
     if not args: return 'Basic usage: {}tio [lang] [code]'.format(self.prefix) + err
@@ -547,7 +577,7 @@ def cmd_tio(self, msg, args, stdin):
     args = []
     code, *parts = rest.split('\n###')
     for part in parts:
-        name, data = part.split('\n', 1) if '\n' in part else (part, '')
+        name, data = part.split(None, 1) if '\n' in part or ' ' in part else (part, '')
         name = name.strip()
         if name == 'stdin': stdin = data
         elif name == 'stderr': stderr = True
@@ -565,9 +595,17 @@ def cmd_tio(self, msg, args, stdin):
         return '5 second timeout reached.'
 
 def cmd_eval(self, msg, args, stdin):
+    '''
+    Evaluate the argument as a kipfa command (do not include the prefix). See
+    also: {prefix}exteval
+    '''
     return parse.parse(self, args, '', msg, False)
 
 def cmd_exteval(self, msg, args, stdin):
+    '''
+    Evaluate the argument as a kipfa command with extended parsing (do not
+    include the prefix). See also: {prefix}eval
+    '''
     return parse.parse(self, args, '', msg, True)
 
 def ttt_fmt(board):
@@ -594,6 +632,11 @@ def ttt_check(board):
     if s == {'o'}: return 'o'
 
 def cmd_ttt(self, msg, args, stdin):
+    '''
+    To start a game of Ultimate Tic-Tac-Toe with someone, type {prefix}ttt
+    @username. Explanation:
+    https://mathwithbaddrawings.com/2013/06/16/ultimate-tic-tac-toe/
+    '''
     with connect() as conn:
         game = conn.execute('''
         SELECT gameid, turn > 1, :u = p1, abs(turn), board
@@ -625,6 +668,10 @@ def cmd_ttt(self, msg, args, stdin):
             return ('You go' if p1 == msg.from_user.id else args + ' goes') + ' first!'
 
 def cmd_feed(self, msg, args, stdin):
+    '''
+    Manages Atom or RSS feeds that are posted in a room. Usage: {prefix}feed
+    [add|del] [url]. See also: {prefix}getfeed
+    '''
     usage = 'Usage: {}feed [add|del] [url]'.format(self.prefix)
     parts = (args or '').split()
     if len(parts) != 2: return usage
@@ -640,6 +687,10 @@ def cmd_feed(self, msg, args, stdin):
             __import__('admin').prefix)
 
 def cmd_getfeed(self, msg, args, stdin):
+    '''
+    Gets a list of feeds that are being posted in a room. See also:
+    {prefix}feed
+    '''
     with connect() as conn:
         return 'Feeds in this room: ' + (', '.join(x[0] for x in conn.execute('SELECT url FROM feeds WHERE chat = ?', (msg.chat.id,)).fetchall()) or '[none]')
 
@@ -647,6 +698,10 @@ def cmd_arslan(self, msg, args, stdin):
     return random.choice(open('data/arslan.txt').read().split('\n|\n'))
 
 def cmd_alias(self, msg, args, stdin):
+    '''
+    Creates a synonym for a given kipfa command. Usage: {prefix}alias
+    [synonym]=[target command].
+    '''
     if not args or '=' not in args:
         return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
     with connect() as conn:
@@ -654,6 +709,13 @@ def cmd_alias(self, msg, args, stdin):
         return 'Command successfully aliased.'
 
 def cmd_perm(self, msg, args, stdin):
+    '''
+    Manages permissions for a given kipfa command. Usage: {prefix}perm
+    [command] [whitelist|blacklist] [user] [duration]. If a duration is not
+    specified, it is taken to be permanent. Use "unwhitelist" or "unblacklist"
+    to remove a permission directive.
+    '''
+
     usage = 'Usage: {}perm [command] [whitelist|blacklist|unwhitelist|unblacklist] [user] [duration] (omit duration for permanent)'.format(self.prefix)
 
     parts = (args or '').split(' ')
