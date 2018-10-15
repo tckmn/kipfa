@@ -18,6 +18,7 @@ import urllib
 import zlib
 
 from util import *
+import data   # for langs (translate & co.)
 import parse  # for eval, exteval
 
 # steno keyboard generator
@@ -39,32 +40,6 @@ def puzhist():
             ''').fetchall()]
 
 # translation
-langs = {
-'af': 'Afrikaans', 'sq': 'Albanian', 'am': 'Amharic', 'ar': 'Arabic', 'hy':
-'Armenian', 'az': 'Azeerbaijani', 'eu': 'Basque', 'be': 'Belarusian', 'bn':
-'Bengali', 'bs': 'Bosnian', 'bg': 'Bulgarian', 'ca': 'Catalan', 'ceb':
-'Cebuano', 'zh-CN': 'Chinese (Simplified)', 'zh-TW': 'Chinese (Traditional)',
-'co': 'Corsican', 'hr': 'Croatian', 'cs': 'Czech', 'da': 'Danish', 'nl':
-'Dutch', 'en': 'English', 'eo': 'Esperanto', 'et': 'Estonian', 'fi': 'Finnish',
-'fr': 'French', 'fy': 'Frisian', 'gl': 'Galician', 'ka': 'Georgian', 'de':
-'German', 'el': 'Greek', 'gu': 'Gujarati', 'ht': 'Haitian Creole', 'ha':
-'Hausa', 'haw': 'Hawaiian', 'iw': 'Hebrew', 'hi': 'Hindi', 'hmn': 'Hmong',
-'hu': 'Hungarian', 'is': 'Icelandic', 'ig': 'Igbo', 'id': 'Indonesian', 'ga':
-'Irish', 'it': 'Italian', 'ja': 'Japanese', 'jw': 'Javanese', 'kn': 'Kannada',
-'kk': 'Kazakh', 'km': 'Khmer', 'ko': 'Korean', 'ku': 'Kurdish', 'ky': 'Kyrgyz',
-'lo': 'Lao', 'la': 'Latin', 'lv': 'Latvian', 'lt': 'Lithuanian', 'lb':
-'Luxembourgish', 'mk': 'Macedonian', 'mg': 'Malagasy', 'ms': 'Malay', 'ml':
-'Malayalam', 'mt': 'Maltese', 'mi': 'Maori', 'mr': 'Marathi', 'mn':
-'Mongolian', 'my': 'Myanmar', 'ne': 'Nepali', 'no': 'Norwegian', 'ny':
-'Nyanja', 'ps': 'Pashto', 'fa': 'Persian', 'pl': 'Polish', 'pt': 'Portuguese',
-'pa': 'Punjabi', 'ro': 'Romanian', 'ru': 'Russian', 'sm': 'Samoan', 'gd':
-'Scots Gaelic', 'sr': 'Serbian', 'st': 'Sesotho', 'sn': 'Shona', 'sd':
-'Sindhi', 'si': 'Sinhala', 'sk': 'Slovak', 'sl': 'Slovenian', 'so': 'Somali',
-'es': 'Spanish', 'su': 'Sundanese', 'sw': 'Swahili', 'sv': 'Swedish', 'tl':
-'Tagalog', 'tg': 'Tajik', 'ta': 'Tamil', 'te': 'Telugu', 'th': 'Thai', 'tr':
-'Turkish', 'uk': 'Ukrainian', 'ur': 'Urdu', 'uz': 'Uzbek', 'vi': 'Vietnamese',
-'cy': 'Welsh', 'xh': 'Xhosa', 'yi': 'Yiddish', 'yo': 'Yoruba', 'zu': 'Zulu'
-}
 def translate(text, tl):
     resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
         'client': 'gtx',
@@ -330,7 +305,7 @@ def cmd_translate(self, msg, args, stdin):
         tl = m.group(1)
         args = args[args.find(':')+1:]
     (res, sl) = translate(args, tl)
-    return '(from {}) {}'.format(langs[sl], res)
+    return '(from {}) {}'.format(data.langs[sl], res)
 
 def cmd_flipflop(self, msg, args, stdin):
     '''
@@ -341,12 +316,12 @@ def cmd_flipflop(self, msg, args, stdin):
     '''
     m = re.match(r'([a-z-]*):', args)
     hist = []
-    tl = random.choice(list(langs.keys() - ['en']))
+    tl = random.choice(list(data.langs.keys() - ['en']))
     if m:
         tl = m.group(1)
         args = args[args.find(':')+1:].strip()
     else:
-        hist += ['(chose '+langs[tl]+')']
+        hist += ['(chose '+data.langs[tl]+')']
     if len(args) > 100:
         return "That's too long. Try something shorter please."
     hist += [args]
@@ -380,7 +355,7 @@ def cmd_flepflap(self, msg, args, stdin):
     else:
         m = m.group(1)
         args = args[args.find(':')+1:].strip()
-    tls = [tl for x in m.split() for tl in (random.sample(list(langs.keys() - ['en']), int(x)) if x.isdigit() else [x])]
+    tls = [tl for x in m.split() for tl in (random.sample(list(data.langs.keys() - ['en']), int(x)) if x.isdigit() else [x])]
     if len(tls) > 8:
         return "That's too many languages. You may provide a maximum of 8."
     if len(args) > 100:
