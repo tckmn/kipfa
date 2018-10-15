@@ -11,18 +11,19 @@ int i;
 EOF
 
 while read -n1 char; do
-	case "$char" in
-		\>) echo '++p;';;
-		\<) echo '--p;';;
-		\+) echo '++t[p];';;
-		\-) echo '--t[p];';;
-		\,) echo 'i=getchar(),t[p]=i*(i>0);';;
-		\.) echo 'putchar(t[p]);';;
-		\[) echo 'while(t[p]){';;
-		\]) echo '}';;
-	esac
+    case "$char" in
+        \>) echo '++p;';;
+        \<) echo '--p;';;
+        \+) echo '++t[p];';;
+        \-) echo '--t[p];';;
+        \,) echo 'i=getchar(),t[p]=i*(i>0);';;
+        \.) echo 'putchar(t[p]);';;
+        \[) echo 'while(t[p]){';;
+        \]) echo '}';;
+        \!) break;;
+    esac
 done >> "$1.c"
 
 echo 'return 0;}' >> "$1.c"
 
-cc -O3 -o "$1.out" "$1.c" && timeout 5 "./$1.out"
+cc -O3 -o "$1.out" "$1.c" && exec timeout 5 "./$1.out" <&0
