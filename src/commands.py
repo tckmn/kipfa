@@ -171,8 +171,8 @@ def cmd_steno(self, msg, args, stdin):
     else:
         return 'Invalid steno.'
 
-def expand(s):
-    return ' '.join([os.popen("grep '^{}[a-z]*$' /usr/share/dict/words | shuf -n1".format(ch)).read().strip() for ch in s])
+def expand(s, r='[a-z]*'):
+    return ' '.join([os.popen("grep '^{}{}$' /usr/share/dict/words | shuf -n1".format(ch, r)).read().strip() for ch in s])
 def cmd_expand(self, msg, args, stdin):
     '''
     Randomly expands an acronym, e.g. {prefix}expand mfw => mole fluently
@@ -191,9 +191,9 @@ def cmd_expand(self, msg, args, stdin):
         elif len(args) > 2 and args[:2] == 'om':
             prefix = 'oh my '
             args = args[2:]
-        elif len(args) > 3 and args[:3] == 'rof':
-            prefix = 'rolling on the floor '
-            args = args[3:]
+        elif len(args) == 4 and args[:3] == 'rof':
+            gerund = expand(args[-1], '[a-z]*ing')
+            if gerund: return 'rolling on the floor ' + gerund
         return ' '.join((prefix + ' meaningfulness what '.join(expand(s) for s in args.split('mfw'))).split())
 
 def cmd_bash(self, msg, args, stdin):
