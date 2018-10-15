@@ -126,6 +126,8 @@ def cmd_help(self, msg, args, stdin):
     else:
         if 'cmd_'+args in globals():
             return ' '.join(globals()['cmd_'+args].__doc__.format(prefix=self.prefix).split())
+        elif args == 'COMMAND':
+            return 'Fuck you'
         else:
             return 'Unknown command. Type {0}help for general information or {0}help COMMAND for help with a specific command.'.format(self.prefix)
 
@@ -640,6 +642,9 @@ def cmd_feed(self, msg, args, stdin):
 def cmd_getfeed(self, msg, args, stdin):
     with connect() as conn:
         return 'Feeds in this room: ' + (', '.join(x[0] for x in conn.execute('SELECT url FROM feeds WHERE chat = ?', (msg.chat.id,)).fetchall()) or '[none]')
+
+def cmd_arslan(self, msg, args, stdin):
+    return random.choice(open('data/arslan.txt').read().split('\n|\n'))
 
 def cmd_alias(self, msg, args, stdin):
     if not args or '=' not in args:
