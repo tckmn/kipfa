@@ -31,8 +31,8 @@ import puzzle
 def puzlevel():
     return connect().execute('SELECT COUNT(*) FROM puzhist').fetchone()[0] + 1
 def puzdesc():
-    puzlevel = puzlevel()
-    return 'Level {}: {}'.format(puzlevel, getattr(puzzle, 'desc'+str(puzlevel)))
+    level = puzlevel()
+    return 'Level {}: {}'.format(level, getattr(puzzle, 'desc'+str(level)))
 def puzhist():
     return [usernamify(x[0])
             for x in connect().execute('''
