@@ -40,10 +40,10 @@ def puzhist():
             ''').fetchall()]
 
 # translation
-def translate(text, tl):
+def translate(text, sl, tl):
     resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
         'client': 'gtx',
-        'sl': 'auto',
+        'sl': sl,
         'tl': tl,
         'dt': 't',
         'ie': 'UTF-8',
@@ -304,9 +304,16 @@ def cmd_translate(self, msg, args, stdin):
     if m:
         tl = m.group(1)
         args = args[args.find(':')+1:]
-    (res, sl) = translate(args, tl)
+    (res, sl) = translate(args, 'auto', tl)
     return '(from {}) {}'.format(data.langs[sl], res)
 
+# TODO document asterisk
+def flipflop(hist, sl, tl):
+    (res, _) = translate(hist[-1], sl, tl)
+    end = False
+    if res in hist: end = True
+    hist += [res]
+    return end
 def cmd_flipflop(self, msg, args, stdin):
     '''
     Translates from English to another language and back repeatedly until
@@ -314,29 +321,22 @@ def cmd_flipflop(self, msg, args, stdin):
     [message]. If no language is specified, a random one will be chosen. See
     also: {prefix}translate, {prefix}flepflap
     '''
-    m = re.match(r'([a-z-]*):', args)
+    m = re.match(r'(\*)?([a-z-]*):', args)
     hist = []
     tl = random.choice(list(data.langs.keys() - ['en']))
     if m:
-        tl = m.group(1)
+        tl = m.group(2)
         args = args[args.find(':')+1:].strip()
     else:
         hist += ['(chose '+data.langs[tl]+')']
     if len(args) > 100:
         return "That's too long. Try something shorter please."
     hist += [args]
+    if m.group(1):
+        if flipflop(hist, tl, 'en'): return '\n'.join(hist)
     while 1:
-        (res, sl) = translate(args, tl)
-        if res in hist:
-            hist += [res]
-            break
-        hist += [res]
-        (res2, sl2) = translate(res, 'en')
-        if res2 in hist:
-            hist += [res2]
-            break
-        hist += [res2]
-        args = res2
+        if flipflop(hist, 'en', tl): break
+        if flipflop(hist, tl, 'en'): break
     return '\n'.join(hist)
 
 def cmd_flepflap(self, msg, args, stdin):
@@ -362,9 +362,9 @@ def cmd_flepflap(self, msg, args, stdin):
         return "That's too long. Try something shorter please."
     hist += [args]
     for tl in tls:
-        (res, sl) = translate(args, tl)
+        (res, sl) = translate(args, 'en', tl)
         hist += ['[{}] {}'.format(tl, res)]
-        (res2, sl2) = translate(res, 'en')
+        (res2, sl2) = translate(res, tl, 'en')
         hist += [res2]
         args = res2
     return (hist[-1], '\n'.join(hist[:-1]))
