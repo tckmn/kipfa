@@ -574,14 +574,14 @@ def cmd_eval(self, msg, args, stdin):
     Evaluate the argument as a kipfa command (do not include the prefix). See
     also: {prefix}exteval
     '''
-    return parse.parse(self, args, '', msg, False)
+    return parse.parse(self, args.lstrip('!'), '', msg, False)
 
 def cmd_exteval(self, msg, args, stdin):
     '''
     Evaluate the argument as a kipfa command with extended parsing (do not
     include the prefix). See also: {prefix}eval
     '''
-    return parse.parse(self, args, '', msg, True)
+    return parse.parse(self, args.lstrip('!'), '', msg, True)
 
 def ttt_fmt(board):
     s = ''
