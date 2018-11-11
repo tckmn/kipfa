@@ -82,6 +82,7 @@ class Bot:
             );
             ''')
 
+        self.chain = dict()
         self.dailied = False
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -102,15 +103,55 @@ class Bot:
             client.send_message(Chats.testing, 'WARNING: feeds not initialized @'+admin.username)
             self.feeds = []
 
+    def check_chain(self, msg, threshold=3):
+        chat = msg.chat.id
+        if chat not in self.chain: self.chain[chat] = []
+
+        # add message to backlog
+        rmsg = self.get_reply(msg)
+        rmsg = rmsg.message_id if rmsg else -1
+        self.chain[chat].append({'txt': msg.text, 'reply': rmsg, 'user': msg.from_user.id})
+
+        # check to see if a chain can be made
+        if len(self.chain[chat]) < threshold: return
+        self.chain[chat] = self.chain[chat][-threshold:]
+        if any(x['reply'] != rmsg for x in self.chain[chat]): return
+        # if len(set(x['user'] for x in self.chain[chat])) != len(self.chain[chat]): return
+        if len(set(x['user'] for x in self.chain[chat])) == 1: return
+        txt = [x['txt'] for x in self.chain[chat]]
+
+        # test for simple repetition with optional prefix/suffix
+        if txt[-2] in txt[-1]:
+            start = txt[-1].index(txt[-2])
+            prefix = txt[-1][:start]
+            suffix = txt[-1][start + len(txt[-2]):]
+            if all(prefix+a+suffix == b for (a,b) in zip(txt, txt[1:])):
+                return (prefix+txt[-1]+suffix, rmsg)
+
+        # test for increasing capitalization or character
+        if len(txt[-2]) == len(txt[-1]):
+            pairs = [(a,b) for (a,b) in zip(txt[-2], txt[-1]) if a != b]
+            pos = [i for (x,y) in [(-3,-2),(-2,-1)]
+                     for (i,(a,b)) in enumerate(zip(txt[x],txt[y]))
+                     if a != b]
+            if len(pairs) == 1 and len(pos) == 2:
+                delta = ord(pairs[0][1]) - ord(pairs[0][0])
+                idelta = pos[1] - pos[0]
+                if all(0<=n<len(a) and (a[:n] + chr(ord(a[n])+delta) + a[n+1:] == b)
+                        for (i,(a,b)) in enumerate(zip(txt, txt[1:]))
+                        for n in [pos[1]-(len(txt)-2-i)*idelta]):
+                    (t, n) = (txt[-1], pos[1]+idelta)
+                    if 0<=n<len(t): return (t[:n] + chr(ord(t[n])+delta) + t[n+1:], rmsg)
+
     def get_reply(self, msg):
         return msg.reply_to_message if hasattr(msg, 'reply_to_message') else None
 
-    def reply(self, msg, txt):
+    def reply(self, msg, txt, reply_msg=None):
         print(txt)
         txt = txt.strip()
         if not txt: txt = '[reply empty]'
         if len(txt) > 4096: txt = '[reply too long]'
-        self.client.send_message(msg.chat.id, txt, reply_to_message_id=msg.message_id)
+        self.client.send_message(msg.chat.id, txt, reply_to_message_id=reply_msg or msg.message_id)
 
     def reply_photo(self, msg, path):
         print(path)
@@ -133,6 +174,9 @@ class Bot:
         if msg.chat.id == Chats.frink:
             self.reply(msg, commands.frink(self, msg, txt, ''))
             return
+
+        chain = self.check_chain(msg)
+        if chain: self.reply(msg, chain[0], reply_msg=chain[1])
 
         is_cmd = txt[:len(self.prefix)] == self.prefix
         is_ext = txt[:len(self.extprefix)] == self.extprefix
