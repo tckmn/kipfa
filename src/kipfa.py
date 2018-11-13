@@ -71,6 +71,16 @@ class Bot:
         rmsg = self.get_reply(msg)
         rmsg = rmsg.message_id if rmsg else -1
         self.chain[chat].append({'txt': msg.text, 'reply': rmsg, 'user': msg.from_user.id})
+        txt = [x['txt'] for x in self.chain[chat]]
+
+        # test for permutation
+        if len(self.chain[chat]) > 1 and len(txt[-1]) > 2 and \
+                self.chain[chat][-2]['reply'] == rmsg and \
+                txt[-2] != txt[-1] and sorted(txt[-2]) == sorted(txt[-1]):
+            thing = txt[-1]
+            while thing == txt[-2] or thing == txt[-1]:
+                thing = ''.join(random.sample(txt[-1], len(txt[-1])))
+            return (thing, rmsg)
 
         # check to see if a chain can be made
         if len(self.chain[chat]) < threshold: return
@@ -78,7 +88,6 @@ class Bot:
         if any(x['reply'] != rmsg for x in self.chain[chat]): return
         # if len(set(x['user'] for x in self.chain[chat])) != len(self.chain[chat]): return
         if len(set(x['user'] for x in self.chain[chat])) == 1: return
-        txt = [x['txt'] for x in self.chain[chat]]
 
         # test for simple repetition with optional prefix/suffix
         if txt[-2] in txt[-1]:
