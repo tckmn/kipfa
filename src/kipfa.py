@@ -76,6 +76,7 @@ class Bot:
         # test for permutation
         if len(self.chain[chat]) > 1 and len(txt[-1]) > 2 and \
                 self.chain[chat][-2]['reply'] == rmsg and \
+                self.chain[chat][-2]['user'] != msg.from_user.id and \
                 txt[-2] != txt[-1] and sorted(txt[-2]) == sorted(txt[-1]):
             thing = txt[-1]
             while thing == txt[-2] or thing == txt[-1]:
