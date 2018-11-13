@@ -176,7 +176,9 @@ class Bot:
             return
 
         chain = self.check_chain(msg)
-        if chain: self.reply(msg, chain[0], reply_msg=chain[1])
+        if chain:
+            self.reply(msg, chain[0], reply_msg=chain[1])
+            self.chain[msg.chat.id] = []
 
         is_cmd = txt[:len(self.prefix)] == self.prefix
         is_ext = txt[:len(self.extprefix)] == self.extprefix
