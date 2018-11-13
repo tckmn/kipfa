@@ -89,6 +89,7 @@ class Bot:
         if any(x['reply'] != rmsg for x in self.chain[chat]): return
         # if len(set(x['user'] for x in self.chain[chat])) != len(self.chain[chat]): return
         if len(set(x['user'] for x in self.chain[chat])) == 1: return
+        txt = [x['txt'] for x in self.chain[chat]]
 
         # test for simple repetition with optional prefix/suffix
         if txt[-2] in txt[-1]:
