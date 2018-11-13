@@ -38,54 +38,14 @@ class Bot:
 
     def __init__(self, client):
         self.client = client
-        self.prefix = '!'
-        self.extprefix = '!!'
-
-        with connect() as conn:
-            conn.executescript('''
-            CREATE TABLE IF NOT EXISTS nameid (
-                name        TEXT UNIQUE NOT NULL,
-                userid      INTEGER UNIQUE NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS perm (
-                rule        TEXT NOT NULL,
-                cmd         TEXT NOT NULL,
-                userid      INTEGER NOT NULL,
-                duration    REAL NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS puztime (
-                userid      INTEGER UNIQUE NOT NULL,
-                nextguess   REAL NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS puzhist (
-                level       INTEGER PRIMARY KEY,
-                userid      INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS shocks (
-                name        TEXT UNIQUE NOT NULL,
-                num         INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS alias (
-                src         TEXT UNIQUE NOT NULL,
-                dest        TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS feeds (
-                url         TEXT NOT NULL,
-                chat        INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS ttt (
-                gameid      INTEGER PRIMARY KEY,
-                p1          INTEGER NOT NULL,
-                p2          INTEGER NOT NULL,
-                turn        INTEGER NOT NULL,
-                board       TEXT NOT NULL
-            );
-            ''')
+        with connect() as conn: conn.executescript(data.schema)
 
         self.chain = dict()
         self.dailied = False
+        self.extprefix = '!!'
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.prefix = '!'
         self.quota = '(unknown)'
         self.recog = sr.Recognizer()
         self.soguess = None
