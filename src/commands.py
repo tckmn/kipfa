@@ -670,7 +670,19 @@ def cmd_getfeed(self, msg, args, stdin):
         return 'Feeds in this room: ' + (', '.join(x[0] for x in conn.execute('SELECT url FROM feeds WHERE chat = ?', (msg.chat.id,)).fetchall()) or '[none]')
 
 def cmd_arslan(self, msg, args, stdin):
+    '''
+    We are infinitely honored to be graced with these holy messages from the
+    Lord himself, the almighty being known to man as Alex Arslan.
+    '''
     return random.choice(open('data/arslan.txt').read().split('\n|\n'))
+
+def cmd_choose(self, msg, args, stdin):
+    '''
+    Chooses a random item from a comma-separated list.
+    '''
+    if not args or ',' not in args:
+        return 'Please provide a comma-separated list of items to choose from.'
+    return random.choice(args.split(',')).strip()
 
 def cmd_alias(self, msg, args, stdin):
     '''
