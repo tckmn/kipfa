@@ -41,16 +41,12 @@ def puzhist():
 
 # translation
 def translate(text, sl, tl):
-    resp = json.loads(requests.get('https://translate.google.com/translate_a/single', params={
-        'client': 'gtx',
-        'sl': sl,
-        'tl': tl,
-        'dt': 't',
-        'ie': 'UTF-8',
-        'oe': 'UTF-8',
-        'q': text
+    resp = json.loads(requests.get('https://translate.yandex.net/api/v1.5/tr.json/translate', params={
+        'key': open('data/key').read().strip(),
+        'text': text.strip(),
+        'lang': sl+'-'+tl if sl else tl
         }).text)
-    return (''.join(x[0] for x in resp[0]), resp[2])
+    return (resp['text'][0], resp['lang'].split('-')[0])
 
 # permissions
 def perm_add(rule, cmd, userid, duration):
@@ -304,7 +300,7 @@ def cmd_translate(self, msg, args, stdin):
     if m:
         tl = m.group(1)
         args = args[args.find(':')+1:]
-    (res, sl) = translate(args, 'auto', tl)
+    (res, sl) = translate(args, None, tl)
     return '(from {}) {}'.format(data.langs[sl], res)
 
 # TODO document asterisk
@@ -683,6 +679,53 @@ def cmd_choose(self, msg, args, stdin):
     if not args or ',' not in args:
         return 'Please provide a comma-separated list of items to choose from.'
     return random.choice(args.split(',')).strip()
+
+def querydb():
+    with open('data/db.json') as f:
+        active = False
+        for line in f:
+            if active:
+                if line[:13] == '    "name": "': break
+                yield line
+            else:
+                if line == '    "name": "0x4r514n",\n': active = True
+def cmd_tgguess(self, msg, args, stdin):
+    if self.tgguess is not None:
+        ret = self.tgguess
+        self.tgguess = None
+        return ret
+    maxid = 0
+    total = 0
+    for line in querydb():
+        if line[:12] == '      "id": ':
+            maxid = int(line[12:-2])
+            total += 1
+    while True:
+        tryid = '      "id": {},\n'.format(random.randint(1, maxid))
+        username = ''
+        active = False
+        for line in querydb():
+            if active:
+                if line[:15] == '      "from": "': username = line[15:-3]
+                if line[:15] == '      "text": "' \
+                        and len(line[15:-2]) > 5 \
+                        and line[15:-2].count(' ') > 1:
+                    self.tgguess = username
+                    return line[15:-2]
+            else:
+                if line[:12] == '      "id": ':
+                    if random.randint(1, total) == 1: active = True
+                    total -= 1
+
+def cmd_oeis(self, msg, args, stdin):
+    if not args: return 'Please provide a sequence to search.'
+    resp = json.loads(requests.get('https://oeis.org/search', params={'fmt':'json', 'q': args}).text)
+    if resp['count'] == 0: return 'No results found.'
+    res = resp['results'][0]
+    q = ', '.join(map(str.strip, args.split(',')))
+    return '[A{0:06}](http://oeis.org/A{0:06}) {1} -- {2}'.format(res['number'], res['name'],
+            res['data'].replace(',', ', ').replace(q, '**'+q+'**'))
+
 
 def cmd_alias(self, msg, args, stdin):
     '''

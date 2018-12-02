@@ -50,6 +50,7 @@ class Bot:
         self.recog = sr.Recognizer()
         self.soguess = None
         self.starttime = time.time()
+        self.tgguess = None
         self.tioerr = ''
         self.wpm = dict()
         self.wump = None
