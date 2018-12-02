@@ -193,7 +193,7 @@ class Bot:
 
     def daily(self):
         pass
-        #text = open('messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
+        #text = open('data/messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
         #self.client.send_message(Chats.schmett, text)
         #self.client.send_message(Chats.haxorz, text)
         #self.client.send_message(Chats.duolingo, text)

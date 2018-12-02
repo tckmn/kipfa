@@ -2,7 +2,6 @@ __pycache__
 config.ini
 kipfa.db
 kipfa.session
-messages.txt
 package-lock.json
 puzzle.py
 data

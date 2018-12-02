@@ -9,4 +9,11 @@ cat >config.ini <<x
 api_id = 12345
 api_hash = 123456789abcdef123456789abcdef12
 x
-# other files not included in the repo: puzzle.py, messages.txt
+
+
+files not included in repo:
+
+data/arslan.txt     arslan copypastae
+data/db.json        telegram history export
+data/key            yandex key
+src/puzzle.py       puzzles
