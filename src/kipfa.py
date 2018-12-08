@@ -144,7 +144,7 @@ class Bot:
         if not txt: return
 
         if msg.chat.id == Chats.frink:
-            self.reply(msg, commands.frink(self, msg, txt, ''))
+            self.reply(msg, commands.cmd_frink(self, msg, txt, ''))
             return
 
         chain = self.check_chain(msg)

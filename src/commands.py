@@ -707,6 +707,7 @@ def cmd_tgguess(self, msg, args, stdin):
         for line in querydb():
             if active:
                 if line[:15] == '      "from": "': username = line[15:-3]
+                if line[:15] == '      "forwarded_from": "': username += '/' + line[25:-3]
                 if line[:15] == '      "text": "' \
                         and len(line[15:-2]) > 5 \
                         and line[15:-2].count(' ') > 1:
