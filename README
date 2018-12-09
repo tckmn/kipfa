@@ -17,3 +17,4 @@ data/arslan.txt     arslan copypastae
 data/db.json        telegram history export
 data/key            yandex key
 src/puzzle.py       puzzles
+src/zendo.py        zendo puzzles

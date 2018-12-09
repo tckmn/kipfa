@@ -28,6 +28,7 @@ class Chats:
     duolingo = -1001105416173
     naclo    = -1001088995343
     newdays  = -1001211597524
+    zendo    = -1001168099998
 
 # network
 import requests

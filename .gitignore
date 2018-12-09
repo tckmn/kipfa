@@ -3,5 +3,6 @@ config.ini
 kipfa.db
 kipfa.session
 package-lock.json
-puzzle.py
+src/puzzle.py
+src/zendo.py
 data

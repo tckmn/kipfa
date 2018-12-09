@@ -20,6 +20,7 @@ import commands
 import data
 import parse
 import puzzle
+import zendo
 
 def xtoi(s):
     s = s[1:]
@@ -146,6 +147,10 @@ class Bot:
         if msg.chat.id == Chats.frink:
             self.reply(msg, commands.cmd_frink(self, msg, txt, ''))
             return
+
+        if msg.chat.id == Chats.zendo and msg.from_user.id != admin.userid:
+            ans = zendo.test(txt)
+            if ans is not None: self.reply(msg, str(ans), reply_msg=-1)
 
         chain = self.check_chain(msg)
         if chain:
