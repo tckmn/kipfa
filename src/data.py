@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS ttt (
 '''
 
 
+usernames = {
+    'beat-1+5': 'Matthew',
+    'The Arsenal': 'Arslan',
+    '\\"blund:\\"\\"': 'Dhilan',
+    '\\"ishan*tro': 'Daniel',
+    'point_only)': 'Ishan',
+    'sans': 'John'
+}
+
+
 langs = {
 'az': 'Azerbaijan',
 'ml': 'Malayalam',

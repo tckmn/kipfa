@@ -328,7 +328,7 @@ def cmd_flipflop(self, msg, args, stdin):
     if len(args) > 100:
         return "That's too long. Try something shorter please."
     hist += [args]
-    if m.group(1):
+    if m and m.group(1):
         if flipflop(hist, tl, 'en'): return '\n'.join(hist)
     while 1:
         if flipflop(hist, 'en', tl): break
@@ -535,7 +535,7 @@ def cmd_tio(self, msg, args, stdin):
     separate line consisting of three hashes (###) followed by the section
     name, which can be any of: stdin (provide input), arg (provide any number
     of command line arguments), or stderr (specify this section to view stderr
-    output in addition to stdout; you may also retrospectively do this with
+    output in addition to stdout; you may also retroactively do this with
     {prefix}tio err).
     '''
     err = " (try `{}help tio` for more information)".format(self.prefix)
@@ -693,7 +693,7 @@ def cmd_tgguess(self, msg, args, stdin):
     if self.tgguess is not None:
         ret = self.tgguess
         self.tgguess = None
-        return ret
+        return data.usernames[ret] if ret in data.usernames else ret
     maxid = 0
     total = 0
     for line in querydb():
@@ -736,7 +736,7 @@ def cmd_alias(self, msg, args, stdin):
     if not args or '=' not in args:
         return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
     with connect() as conn:
-        conn.execute('INSERT INTO alias (src, dest) VALUES (?, ?)', args.split('=', 1))
+        conn.execute('INSERT OR REPLACE INTO alias (src, dest) VALUES (?, ?)', args.split('=', 1))
         return 'Command successfully aliased.'
 
 def cmd_perm(self, msg, args, stdin):
