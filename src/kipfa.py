@@ -72,7 +72,7 @@ class Bot:
         # add message to backlog
         rmsg = self.get_reply(msg)
         rmsg = rmsg.message_id if rmsg else -1
-        self.chain[chat].append({'txt': msg.text, 'reply': rmsg, 'user': msg.from_user.id})
+        self.chain[chat].append({'txt': msg.text or msg.caption, 'reply': rmsg, 'user': msg.from_user.id})
         txt = [x['txt'] for x in self.chain[chat]]
 
         # test for permutation
@@ -84,6 +84,11 @@ class Bot:
             while thing == txt[-2] or thing == txt[-1]:
                 thing = ''.join(random.sample(txt[-1], len(txt[-1])))
             return (thing, rmsg)
+
+        # test for "what what"
+        if len(self.chain[chat]) > 1 and txt[-1] == 'what' == txt[-2] and \
+                self.chain[chat][-2]['user'] != msg.from_user.id:
+            return ('in the', -1)
 
         # check to see if a chain can be made
         if len(self.chain[chat]) < threshold: return
@@ -131,6 +136,8 @@ class Bot:
         self.client.send_photo(msg.chat.id, path, reply_to_message_id=msg.message_id)
 
     def process_message(self, msg):
+        if msg.from_user.id == 777000 and msg.text and msg.text[:10] == 'Login code': return
+
         self.client.forward_messages(Chats.ppnt, msg.chat.id, [msg.message_id])
         if msg.edit_date: return
 
@@ -161,7 +168,7 @@ class Bot:
         is_ext = txt[:len(self.extprefix)] == self.extprefix
         if is_cmd or is_ext:
             rmsg = self.get_reply(msg)
-            buf = rmsg.text if rmsg else ''
+            buf = (rmsg.text or rmsg.caption) if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
             self.reply(msg, parse.parse(self, txt[idx:], buf, msg, is_ext))
 
@@ -197,6 +204,7 @@ class Bot:
         self.process_message(update)
 
     def daily(self):
+        # self.client.send_message(Chats.haxorz, 'aoc in 10 minutes @KeyboardFire')
         pass
         #text = open('data/messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
         #self.client.send_message(Chats.schmett, text)

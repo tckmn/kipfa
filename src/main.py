@@ -18,7 +18,7 @@ while True:
     try:
         time.sleep(1)
         lt = time.localtime()
-        if lt.tm_hour == 20 and lt.tm_min == 0:
+        if lt.tm_hour == 22 and lt.tm_min == 50:
             if not bot.dailied:
                 bot.daily()
                 bot.dailied = True
