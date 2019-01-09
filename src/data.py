@@ -48,8 +48,34 @@ usernames = {
     '\\"blund:\\"\\"': 'Dhilan',
     '\\"ishan*tro': 'Daniel',
     'point_only)': 'Ishan',
-    'sans': 'John'
+    'sans': 'John',
+    "alcohol'": 'Sebastian'
 }
+
+def init_tgguess():
+    with open('data/db.json') as f:
+        active = False
+        things = []
+        username = None
+        for line in f:
+            if active:
+                if line[:13] == '    "name": "': break
+                if line[:15] == '      "from": "': username = line[15:-3]
+                if line[:25] == '      "forwarded_from": "': username += '/' + line[25:-3]
+                if line[:15] == '      "text": "' \
+                        and len(line[15:-2]) > 5 \
+                        and line[15:-2].count(' ') > 1:
+                    things.append((line[15:-2].replace('\\"', '"').replace('\\n', '\n'), username))
+            else:
+                if line == '    "name": "0x4r514n",\n': active = True
+        dups = set()
+        seen = set()
+        for (text, username) in things:
+            if text in seen:
+                dups.add(text)
+            else:
+                seen.add(text)
+        return [(t,u) for (t,u) in things if t not in dups]
 
 
 langs = {

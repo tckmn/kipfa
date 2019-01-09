@@ -680,43 +680,15 @@ def cmd_choose(self, msg, args, stdin):
         return 'Please provide a comma-separated list of items to choose from.'
     return random.choice(args.split(',')).strip()
 
-def querydb():
-    with open('data/db.json') as f:
-        active = False
-        for line in f:
-            if active:
-                if line[:13] == '    "name": "': break
-                yield line
-            else:
-                if line == '    "name": "0x4r514n",\n': active = True
 def cmd_tgguess(self, msg, args, stdin):
     if self.tgguess is not None:
-        ret = self.tgguess
+        ret = self.tgguess.split('/')
         self.tgguess = None
-        return data.usernames[ret] if ret in data.usernames else ret
-    maxid = 0
-    total = 0
-    for line in querydb():
-        if line[:12] == '      "id": ':
-            maxid = int(line[12:-2])
-            total += 1
-    while True:
-        tryid = '      "id": {},\n'.format(random.randint(1, maxid))
-        username = ''
-        active = False
-        for line in querydb():
-            if active:
-                if line[:15] == '      "from": "': username = line[15:-3]
-                if line[:15] == '      "forwarded_from": "': username += '/' + line[25:-3]
-                if line[:15] == '      "text": "' \
-                        and len(line[15:-2]) > 5 \
-                        and line[15:-2].count(' ') > 1:
-                    self.tgguess = username
-                    return line[15:-2]
-            else:
-                if line[:12] == '      "id": ':
-                    if random.randint(1, total) == 1: active = True
-                    total -= 1
+        return ', forwarded from '.join(data.usernames[x] if x in data.usernames else x for x in ret)
+    if not hasattr(self, 'tgarr'): self.tgarr = data.init_tgguess()
+    (text, username) = random.choice(self.tgarr)
+    self.tgguess = username
+    return text
 
 def cmd_oeis(self, msg, args, stdin):
     if not args: return 'Please provide a sequence to search.'
