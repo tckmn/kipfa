@@ -48,7 +48,7 @@ usernames = {
     '\\"blund:\\"\\"': 'Dhilan',
     '\\"ishan*tro': 'Daniel',
     'point_only)': 'Ishan',
-    'sans': 'John',
+    'sans': 'Riley',
     "alcohol'": 'Sebastian'
 }
 
