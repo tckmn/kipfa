@@ -76,16 +76,6 @@ class Bot:
         self.chain[chat].append({'txt': msg.text or msg.caption, 'reply': rmsg, 'user': msg.from_user.id})
         txt = [x['txt'] for x in self.chain[chat]]
 
-        # test for permutation
-        if len(self.chain[chat]) > 1 and len(txt[-1]) > 2 and \
-                self.chain[chat][-2]['reply'] == rmsg and \
-                self.chain[chat][-2]['user'] != msg.from_user.id and \
-                txt[-2] != txt[-1] and sorted(txt[-2]) == sorted(txt[-1]):
-            thing = txt[-1]
-            while thing == txt[-2] or thing == txt[-1]:
-                thing = ''.join(random.sample(txt[-1], len(txt[-1])))
-            return (thing, rmsg)
-
         # test for "what what"
         if len(self.chain[chat]) > 1 and txt[-1] == 'what' == txt[-2] and \
                 self.chain[chat][-2]['user'] != msg.from_user.id:
@@ -96,7 +86,7 @@ class Bot:
         self.chain[chat] = self.chain[chat][-threshold:]
         if any(x['reply'] != rmsg for x in self.chain[chat]): return
         # if len(set(x['user'] for x in self.chain[chat])) != len(self.chain[chat]): return
-        if len(set(x['user'] for x in self.chain[chat])) == 1: return
+        if len(set(x['user'] for x in self.chain[chat])) != threshold: return
         txt = [x['txt'] for x in self.chain[chat]]
 
         # test for simple repetition with optional prefix/suffix
@@ -106,6 +96,14 @@ class Bot:
             suffix = txt[-1][start + len(txt[-2]):]
             if all(prefix+a+suffix == b for (a,b) in zip(txt, txt[1:])):
                 return (prefix+txt[-1]+suffix, rmsg)
+
+        # test for permutation
+        if len(txt[-1]) > 2 and len(set(txt)) == len(txt) and \
+                all(sorted(x) == sorted(txt[-1]) for x in txt[:-1]):
+            thing = txt[-1]
+            while thing in txt:
+                thing = ''.join(random.sample(txt[-1], len(txt[-1])))
+            return (thing, rmsg)
 
         # test for increasing capitalization or character
         if len(txt[-2]) == len(txt[-1]):
