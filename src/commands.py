@@ -365,6 +365,10 @@ def cmd_flepflap(self, msg, args, stdin):
         args = res2
     return (hist[-1], '\n'.join(hist[:-1]))
 
+soa = 'https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('
+soq = 'https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('
+seq = 'https://api.stackexchange.com/2.2/questions?page={}&pagesize=100&order=desc&sort=activity&site={}&filter=!bA1d_KulCdCDHu&key=Oij)9kWgsRogxL0fBwKdCw(('
+
 def cmd_soguess(self, msg, args, stdin):
     '''
     Run this command once to get a code snippet from a random answer on
@@ -372,11 +376,11 @@ def cmd_soguess(self, msg, args, stdin):
     see if you were right.
     '''
     if self.soguess is None:
-        data = json.loads(requests.get('https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('.format(random.randint(100, 1000))).text)
+        data = json.loads(requests.get(soa.format(random.randint(1, 100000))).text)
         for item in sorted(data['items'], key=lambda x: -x['score']):
             pre = BeautifulSoup(item['body'], 'html.parser').find('pre')
             if pre is not None and 10 < len(pre.text) < 500:
-                qdata = json.loads(requests.get('https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('.format(item['question_id'])).text)
+                qdata = json.loads(requests.get(soq.format(item['question_id'])).text)
                 self.soguess = qdata['items'][0]['tags']
                 self.quota = qdata['quota_remaining']
                 return 'Guess a tag!\n' + cf(pre.text)
@@ -385,6 +389,23 @@ def cmd_soguess(self, msg, args, stdin):
     else:
         resp = 'The correct tags were: ' + ', '.join(self.soguess)
         self.soguess = None
+        return resp
+
+import html
+def cmd_seguess(self, msg, args, stdin):
+    '''
+    Run this command once to get the title of a question from a random Stack
+    Exchange site. Then guess the site and run it again to see if you were
+    right.
+    '''
+    if self.seguess is None:
+        [site, questions] = random.choice(data.sites)
+        resp = json.loads(requests.get(seq.format(random.randint(1, max(1, questions//100)), site)).text)
+        self.seguess = site
+        return 'Guess a site!\n' + html.unescape(random.choice([x['title'] for x in resp['items'] if x['score'] >= 0]))
+    else:
+        resp = 'The correct site was: ' + self.seguess
+        self.seguess = None
         return resp
 
 def cmd_ddg(self, msg, args, stdin):

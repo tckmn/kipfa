@@ -49,6 +49,7 @@ class Bot:
         self.prefix = '!'
         self.quota = '(unknown)'
         self.recog = sr.Recognizer()
+        self.seguess = None
         self.soguess = None
         self.starttime = time.time()
         self.tgguess = None
