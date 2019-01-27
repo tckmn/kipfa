@@ -129,8 +129,15 @@ class Bot:
         print(txt)
         txt = txt.strip()
         if not txt: txt = '[reply empty]'
-        if len(txt) > 4096: txt = '[reply too long]'
-        self.client.send_message(msg.chat.id, txt, reply_to_message_id=reply_msg or msg.message_id)
+        if len(txt) > 1048576:
+            self.reply(msg, '[reply >1MB]', reply_msg)
+        elif len(txt) > 4096:
+            fname = '/tmp/r' + str(random.random())[2:7] + '.txt'
+            with open(fname, 'w') as f: f.write(txt)
+            self.client.send_document(msg.chat.id, fname, reply_to_message_id=reply_msg or msg.message_id)
+            os.remove(fname)
+        else:
+            self.client.send_message(msg.chat.id, txt, reply_to_message_id=reply_msg or msg.message_id)
 
     def reply_photo(self, msg, path):
         print(path)
