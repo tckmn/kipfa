@@ -44,3 +44,26 @@ def get(url):
 import re
 def cf(s):
     return '```' + s.strip().replace('```', '`\u200b`\u200b`') + '```'
+
+# latex
+import os
+import subprocess
+def latex(l, d):
+    os.mkdir(d)
+    with open(d+'/a.tex', 'w') as f:
+        f.write('''
+        \\documentclass{standalone}
+        \\usepackage{amsmath}
+        \\usepackage{amsfonts}
+        \\usepackage{mathtools}
+        \\usepackage{eufrak}
+        \\begin{document}
+        $X$
+        \\end{document}
+        '''.replace('X', l))
+    subprocess.run(['timeout', '-s9', '3',
+        'bash', '-c',
+        'cd {};'.format(d) +
+        'openout_any=p openin_any=p shell_escape=f pdflatex a.tex </dev/null;' +
+        'convert -density 200 -background white -alpha remove -bordercolor White -border 5x5 a.pdf a.png'
+        ])

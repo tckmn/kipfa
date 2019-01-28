@@ -7,6 +7,9 @@ import shutil
 import subprocess
 import time
 
+# pyrogram
+from pyrogram import InputMediaPhoto
+
 # pocketsphinx
 import speech_recognition as sr
 
@@ -194,12 +197,19 @@ class Bot:
         if matches:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
-        if txt[0] == '$' and txt[-1] == '$' and len(txt) > 2:
-            # TODO adding a timeout is probably a good idea
-            r = requests.get('https://latex.codecogs.com/png.latex?'+txt[1:-1], stream=True)
-            with open('tex.png', 'wb') as f: shutil.copyfileobj(r.raw, f)
-            self.reply_photo(msg, 'tex.png')
-            os.remove('tex.png')
+        latexes = [x for x in txt.split('$')[1:-1:2] if x]
+        dirs = ['l{}'.format(random.random()) for _ in latexes]
+        for (l, d) in zip(latexes, dirs): latex(l, d)
+        good = [d+'/a.png' for d in dirs if os.path.exists(d+'/a.png')]
+        if len(good) == 1:
+            self.reply_photo(msg, good[0])
+        elif 2 <= len(good) <= 10:
+            self.client.send_media_group(msg.chat.id, [
+                InputMediaPhoto(x) for x in good
+                ], reply_to_message_id=msg.message_id)
+        elif 10 < len(good):
+            self.reply(msg, '[too many latexes]')
+        for d in dirs: shutil.rmtree(d)
 
         for (pat, prob, resp) in data.triggers:
             if re.search(pat, txt) and random.random() < prob:
