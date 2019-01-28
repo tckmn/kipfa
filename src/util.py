@@ -57,6 +57,7 @@ def latex(l, d):
         \\usepackage{amsfonts}
         \\usepackage{mathtools}
         \\usepackage{eufrak}
+        \\usepackage{txfonts}
         \\begin{document}
         $X$
         \\end{document}
