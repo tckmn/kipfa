@@ -58,6 +58,8 @@ def latex(l, d):
         \\usepackage{mathtools}
         \\usepackage{eufrak}
         \\usepackage{txfonts}
+        \\usepackage{xcolor}
+        \\usepackage{cancel}
         \\begin{document}
         $X$
         \\end{document}
