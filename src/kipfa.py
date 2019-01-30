@@ -147,9 +147,11 @@ class Bot:
     def process_message(self, msg):
         if msg.from_user.id == 777000 and msg.text and msg.text[:10] == 'Login code': return
 
+        # log
         self.client.forward_messages(Chats.ppnt, msg.chat.id, [msg.message_id])
         if msg.edit_date: return
 
+        # check for notable message count
         sid = str(msg.message_id)
         if len(str(msg.message_id)) > 3 and ( \
                 len(set(sid)) == 1 or \
@@ -160,19 +162,23 @@ class Bot:
         txt = msg.text
         if not txt: return
 
+        # frink
         if msg.chat.id == Chats.frink:
             self.reply(msg, commands.cmd_frink(self, msg, txt, ''))
             return
 
+        # zendo
         if msg.chat.id == Chats.zendo and msg.from_user.id != admin.userid:
             ans = zendo.test(txt)
             if ans is not None: self.reply(msg, str(ans), reply_msg=-1)
 
+        # chains
         chain = self.check_chain(msg)
         if chain:
             self.reply(msg, chain[0], reply_msg=chain[1])
             self.chain[msg.chat.id] = []
 
+        # command processing
         is_cmd = txt[:len(self.prefix)] == self.prefix
         is_ext = txt[:len(self.extprefix)] == self.extprefix
         if is_cmd or is_ext:
@@ -181,11 +187,13 @@ class Bot:
             idx = len(self.extprefix) if is_ext else len(self.prefix)
             self.reply(msg, parse.parse(self, txt[idx:], buf, msg, is_ext))
 
+        # wpm
         elif msg.from_user.id in self.wpm:
             (start, end, n) = self.wpm[msg.from_user.id]
             n += len(msg.text) + 1
             self.wpm[msg.from_user.id] = (start, msg.date, n)
 
+        # admin command processing
         if txt[:len(admin.prefix)] == admin.prefix and msg.from_user.id == admin.userid:
             cmd, *args = txt[len(admin.prefix):].split(' ', 1)
             cmd = 'cmd_' + cmd
@@ -193,10 +201,12 @@ class Bot:
             if hasattr(admin, cmd): self.reply(msg, getattr(admin, cmd)(self, args) or 'done')
             else: self.reply(msg, 'Unknown admin command.')
 
+        # X-SAMPA to IPA
         matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
         if matches:
             self.reply(msg, '\n'.join(map(xtoi, matches)))
 
+        # latex to image
         latexes = [x for x in txt.split('$')[1:-1:2] if x]
         dirs = ['l{}'.format(random.random()) for _ in latexes]
         for (l, d) in zip(latexes, dirs): latex(l, d)
@@ -211,8 +221,9 @@ class Bot:
             self.reply(msg, '[too many latexes]')
         for d in dirs: shutil.rmtree(d)
 
-        for (pat, prob, resp) in data.triggers:
-            if re.search(pat, txt) and random.random() < prob:
+        # check triggers
+        for (pat, prob, mention, resp) in data.triggers:
+            if re.search(pat, txt) and random.random() < prob and (msg.mentioned or not mention):
                 self.reply(msg, resp(txt))
 
     def callback(self, client, update):

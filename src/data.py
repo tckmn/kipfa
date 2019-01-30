@@ -353,14 +353,26 @@ langs = {
 }
 
 
+np = lambda _: random.choice([
+    'no problem', 'np', 'you\'re welcome', 'my pleasure'
+    ]) + ' ' + random.choice([
+    '', 'friend', 'buddy', 'pal'
+    ])
+fu = lambda _: ':('
+
 triggers = [
 
+    (r'(?i)(?<!no )thank(s| you) kipfa', 1, False, np),
+    (r'(?i)(?<!no )thank', 1, True, np),
+    (r'(?i)fuck you kipfa', 1, False, fu),
+    (r'(?i)fuck you', 1, True, fu),
+
     (r'(?i)\bwhere (are|r) (you|u|y\'?all)\b|\bwhere (you|u|y\'?all) at\b',
-     0.5,
+     0.5, False,
      lambda _: 'NUMBERS NIGHT CLUB'),
 
     (r'(?i)mountain|\brock|cluster',
-     0.3,
+     0.3, False,
      lambda _: (random.choice([
          'aftershock', 'airlock', 'air lock', 'air sock', 'alarm clock',
          'antiknock', 'arawak', 'around the clock', 'atomic clock',
@@ -406,7 +418,7 @@ triggers = [
          ])).upper() + ' ' + ''.join(random.choice('˥˦˧˨˩') for _ in range(50))),
 
     (r'(?i)\bgo\b',
-     0.1,
+     0.1, False,
      lambda _: 'lol no generics')
 
 ]
