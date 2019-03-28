@@ -93,7 +93,7 @@ def cmd_help(self, msg, args, stdin):
     help helps helpfully, a helper helping helpees.
     '''
     if not args:
-        return 'This is @KeyboardFire\'s bot. Type {}commands for a list of commands. Source code: https://github.com/KeyboardFire/kipfa'.format(self.prefix)
+        return 'This is @tckmn\'s bot. Type {}commands for a list of commands. Source code: https://github.com/tckmn/kipfa'.format(self.prefix)
     else:
         if args == 'arslan':
             return cmd_arslan(0,0,0,0)
