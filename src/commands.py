@@ -333,6 +333,9 @@ def cmd_flipflop(self, msg, args, stdin):
     while 1:
         if flipflop(hist, 'en', tl): break
         if flipflop(hist, tl, 'en'): break
+        if sum(len(x) for x in hist) > 5000:
+            hist += ['[result too long, terminated]']
+            break
     return '\n'.join(hist)
 
 def cmd_flepflap(self, msg, args, stdin):
