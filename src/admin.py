@@ -20,7 +20,7 @@ def cmd_updateusers(bot, args):
     count = 0
     with connect() as conn:
         for ch in bot.client.send(functions.messages.GetAllChats([])).chats:
-            if isinstance(ch, types.Channel):
+            if isinstance(ch, types.Channel) and not ch.broadcast:
                 count += 1
                 conn.executemany('''
                 INSERT OR REPLACE INTO nameid (name, userid) VALUES (?, ?)
