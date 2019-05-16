@@ -530,7 +530,7 @@ def cmd_mma(self, msg, args, stdin):
     p = subprocess.run(['timeout', '-s9', '3',
         '/home/llama/neollama/mma/scriptdir/wolframscript',
         '-c',
-        'Developer`StartProtectedMode[];' + args], stdout=subprocess.PIPE)
+        'Developer`StartProtectedMode[];ToExpression["' + args.replace('\\', '\\\\').replace('"', '\\"') + '"]'], stdout=subprocess.PIPE)
     print(p.returncode)
     return '3 second timeout reached.' if p.returncode == -9 else \
             cf('\u200b'+(p.stdout.decode('utf-8') or '[no output]'))
