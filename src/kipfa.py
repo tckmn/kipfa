@@ -49,6 +49,8 @@ class Bot:
         self.extprefix = '!!'
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.no_meems = []
+        self.no_tools = []
         self.prefix = '!'
         self.quota = '(unknown)'
         self.recog = sr.Recognizer()
@@ -153,7 +155,8 @@ class Bot:
 
         # check for notable message count
         sid = str(msg.message_id)
-        if len(str(msg.message_id)) > 3 and ( \
+        if msg.chat.id not in self.no_meems and \
+                len(str(msg.message_id)) > 3 and ( \
                 len(set(sid)) == 1 or \
                 list(map(abs, set(map(lambda x: int(x[1])-int(x[0]), zip(sid,sid[1:]))))) == [1] or \
                 msg.message_id % 10000 == 0):
@@ -174,7 +177,7 @@ class Bot:
 
         # chains
         chain = self.check_chain(msg)
-        if chain:
+        if msg.chat.id not in self.no_meems and chain:
             self.reply(msg, chain[0], reply_msg=chain[1])
             self.chain[msg.chat.id] = []
 
@@ -201,30 +204,33 @@ class Bot:
             if hasattr(admin, cmd): self.reply(msg, getattr(admin, cmd)(self, args) or 'done')
             else: self.reply(msg, 'Unknown admin command.')
 
-        # X-SAMPA to IPA
-        matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
-        if matches:
-            self.reply(msg, '\n'.join(map(xtoi, matches)))
+        if msg.chat.id not in self.no_tools:
 
-        # latex to image
-        latexes = [x for x in txt.split('$')[1:-1:2] if x]
-        dirs = ['l{}'.format(random.random()) for _ in latexes]
-        for (l, d) in zip(latexes, dirs): latex(l, d)
-        good = [d+'/a.png' for d in dirs if os.path.exists(d+'/a.png')]
-        if len(good) == 1:
-            self.reply_photo(msg, good[0])
-        elif 2 <= len(good) <= 10:
-            self.client.send_media_group(msg.chat.id, [
-                InputMediaPhoto(x) for x in good
-                ], reply_to_message_id=msg.message_id)
-        elif 10 < len(good):
-            self.reply(msg, '[too many latexes]')
-        for d in dirs: shutil.rmtree(d)
+            # X-SAMPA to IPA
+            matches = re.findall(r'\bx/[^/]*/|\bx\[[^]]*\]', txt)
+            if matches:
+                self.reply(msg, '\n'.join(map(xtoi, matches)))
+
+            # latex to image
+            latexes = [x for x in txt.split('$')[1:-1:2] if x]
+            dirs = ['l{}'.format(random.random()) for _ in latexes]
+            for (l, d) in zip(latexes, dirs): latex(l, d)
+            good = [d+'/a.png' for d in dirs if os.path.exists(d+'/a.png')]
+            if len(good) == 1:
+                self.reply_photo(msg, good[0])
+            elif 2 <= len(good) <= 10:
+                self.client.send_media_group(msg.chat.id, [
+                    InputMediaPhoto(x) for x in good
+                    ], reply_to_message_id=msg.message_id)
+            elif 10 < len(good):
+                self.reply(msg, '[too many latexes]')
+            for d in dirs: shutil.rmtree(d)
 
         # check triggers
-        for (pat, prob, mention, resp) in data.triggers:
-            if re.search(pat, txt) and random.random() < prob and (msg.mentioned or not mention):
-                self.reply(msg, resp(txt))
+        if msg.chat.id not in self.no_meems:
+            for (pat, prob, mention, resp) in data.triggers:
+                if re.search(pat, txt) and random.random() < prob and (msg.mentioned or not mention):
+                    self.reply(msg, resp(txt))
 
     def callback(self, client, update):
         print(update)
