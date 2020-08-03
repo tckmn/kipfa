@@ -19,17 +19,16 @@ from pyrogram.api import types, functions
 def cmd_updateusers(bot, args):
     count = 0
     with connect() as conn:
-        for ch in bot.client.send(functions.messages.GetAllChats([])).chats:
+        for ch in bot.client.send(functions.messages.GetAllChats(except_ids=[])).chats:
             if isinstance(ch, types.Channel) and not ch.broadcast:
                 count += 1
                 conn.executemany('''
                 INSERT OR REPLACE INTO nameid (name, userid) VALUES (?, ?)
                 ''', [(u.username, u.id) for u in bot.client.send(
                     functions.channels.GetParticipants(
-                        bot.client.peers_by_id[-1000000000000-ch.id],
-                        types.ChannelParticipantsRecent(),
-                        0, 0, 0
-                        )
+                        channel=types.InputChannel(channel_id=ch.id, access_hash=ch.access_hash),
+                        filter=types.ChannelParticipantsRecent(),
+                        offset=0, limit=0, hash=0)
                     ).users if u.username])
         nusers = conn.execute('SELECT COUNT(*) FROM nameid').fetchone()[0]
         return 'updated {} users in {} chats'.format(nusers, count)
