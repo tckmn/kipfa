@@ -10,7 +10,7 @@ api_id = 12345
 api_hash = 123456789abcdef123456789abcdef12
 x
 
-pip dependencies: SpeechRecognition pycairo Pyrogram
+pip dependencies: SpeechRecognition pycairo Pyrogram requests tgcrypto beautifulsoup4
 
 files not included in repo:
 data/arslan.txt     arslan copypastae
