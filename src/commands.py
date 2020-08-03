@@ -198,7 +198,7 @@ def cmd_bash(self, msg, args, stdin):
     '''
     resp = get('http://bash.org/?random1')
     if resp is None: return '[timeout]'
-    quote = max(BeautifulSoup(resp, 'html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
+    quote = max(BeautifulSoup(resp, features='html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
     return cf(quote)
 
 def cmd_uptime(self, msg, args, stdin):
@@ -381,7 +381,7 @@ def cmd_soguess(self, msg, args, stdin):
     if self.soguess is None:
         data = json.loads(requests.get(soa.format(random.randint(1, 100000))).text)
         for item in sorted(data['items'], key=lambda x: -x['score']):
-            pre = BeautifulSoup(item['body'], 'html.parser').find('pre')
+            pre = BeautifulSoup(item['body'], features='html.parser').find('pre')
             if pre is not None and 10 < len(pre.text) < 500:
                 qdata = json.loads(requests.get(soq.format(item['question_id'])).text)
                 self.soguess = qdata['items'][0]['tags']
@@ -420,7 +420,7 @@ def cmd_ddg(self, msg, args, stdin):
         return 'Please provide a search query.'
     resp = get('https://duckduckgo.com/html/?q=' + urllib.parse.quote(args))
     if resp is None: return '[timeout]'
-    res = BeautifulSoup(resp, 'lxml').find('div', class_='web-result')
+    res = BeautifulSoup(resp, features='html.parser').find('div', class_='web-result')
     link = urllib.parse.unquote(res.find('a').attrs['href'][15:])
     return link if link else 'No results.'
 
@@ -529,7 +529,7 @@ def cmd_mma(self, msg, args, stdin):
     if not args:
         return 'Please provide Mathematica code to run.'
     p = subprocess.run(['timeout', '-s9', '3',
-        '/home/llama/neollama/mma/scriptdir/wolframscript',
+        '/home/atckmn/mma/scriptdir/wolframscript',
         '-c',
         'Developer`StartProtectedMode[];ToExpression["' + args.replace('\\', '\\\\').replace('"', '\\"') + '"]'], stdout=subprocess.PIPE)
     print(p.returncode)
@@ -724,6 +724,12 @@ def cmd_oeis(self, msg, args, stdin):
     return '[A{0:06}](http://oeis.org/A{0:06}) {1} -- {2}'.format(res['number'], res['name'],
             res['data'].replace(',', ', ').replace(q, '**'+q+'**'))
 
+from difflib import get_close_matches
+wordlist = [x[:-1] for x in open('/usr/share/dict/words').readlines()]
+def cmd_quote(self, msg, args, stdin):
+    args = args or 'its a quote from lord palmerston about schlewswig holstein'
+    return ' '.join((get_close_matches(w, random.sample(wordlist, 50000), 1)+[w])[0] for w in args.split())
+
 
 def cmd_alias(self, msg, args, stdin):
     '''
@@ -735,6 +741,13 @@ def cmd_alias(self, msg, args, stdin):
     with connect() as conn:
         conn.execute('INSERT OR REPLACE INTO alias (src, dest) VALUES (?, ?)', args.split('=', 1))
         return 'Command successfully aliased.'
+
+def cmd_unalias(self, msg, args, stdin):
+    if not args:
+        return 'Usage: {}unalias src'.format(self.prefix)
+    with connect() as conn:
+        rows = conn.execute('DELETE FROM alias WHERE src = ?', (args,)).rowcount
+        return 'Deleted {} rows.'.format(rows)
 
 def cmd_perm(self, msg, args, stdin):
     '''
