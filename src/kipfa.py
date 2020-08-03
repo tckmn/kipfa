@@ -45,7 +45,7 @@ class Bot:
         with connect() as conn: conn.executescript(data.schema)
 
         self.chain = dict()
-        self.dailied = False
+        self.dailies = []
         self.extprefix = '!!'
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -237,9 +237,11 @@ class Bot:
         self.process_message(update)
 
     def daily(self):
-        # self.client.send_message(Chats.haxorz, 'aoc in 10 minutes @KeyboardFire')
-        pass
-        #text = open('data/messages.txt').readlines()[datetime.date.today().toordinal()-736764].strip()
-        #self.client.send_message(Chats.schmett, text)
-        #self.client.send_message(Chats.haxorz, text)
-        #self.client.send_message(Chats.duolingo, text)
+        lt = time.localtime()
+        for d in dailies:
+            dailyid, hour, minute, msg, chat, dailied = d
+            if lt.tm_hour == hour and lt.tm_min == minute:
+                if not dailied:
+                    self.client.send_message(chat, msg)
+                    d[-1] = True
+            else: d[-1] = False

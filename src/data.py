@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS ttt (
     turn        INTEGER NOT NULL,
     board       TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS dailies (
+    dailyid     INTEGER PRIMARY KEY,
+    hour        INTEGER NOT NULL,
+    minute      INTEGER NOT NULL,
+    message     TEXT NOT NULL
+);
 '''
 
 
