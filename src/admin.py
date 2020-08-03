@@ -69,7 +69,7 @@ class Req:
             resp = get(self.url)
             return None if resp is None else self.query(resp)
         except:
-            __import__('kipfa').client.send_message(Chats.testing, 'error in req '+self.url)
+            __import__('kipfa').client.send_message(Chats.testing, cf(f'in req {self.url}:\n{traceback.format_exc()}'))
             return None
     def go(self):
         newval = self.update()
@@ -100,10 +100,10 @@ class Feed:
         for item in feed[0].findall('item'):
             text = item.find('link').text
             if self.url == 'http://xkcd.com/rss.xml':
-                try: text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').find('img').attrs['title']
+                try: text += ' ' + BeautifulSoup(item.find('description').text, features='html.parser').find('img').attrs['title']
                 except: pass
             elif self.url == 'http://www.smbc-comics.com/rss.php':
-                try: text += ' ' + BeautifulSoup(item.find('description').text, 'html.parser').contents[1].contents[2]
+                try: text += ' ' + BeautifulSoup(item.find('description').text, features='html.parser').contents[1].contents[2]
                 except: pass
             for x in self.send_feed(item.find('guid').text, text): yield x
     def send_atom(self, feed):
@@ -147,19 +147,19 @@ def cmd_initfeeds(bot, args):
             lambda val: 'obtw new uotd',
             [Chats.haxorz]),
         Req('https://www.sjsreview.com/?s=',
-            lambda text: BeautifulSoup(text, 'lxml').find('h2').find('a').attrs['href'].replace(' ', '%20'),
+            lambda text: BeautifulSoup(text, features='html.parser').find('h2').find('a').attrs['href'].replace(' ', '%20'),
             lambda val: val,
             [Chats.schmett]),
-        Req('https://www.voanoticias.com/z/537',
-            lambda text: BeautifulSoup(text, 'lxml').find('div', id='content').find('div', class_='content').find('a').attrs['href'],
+        Req('https://www.voanoticias.com/radio-buenos-dias-america',
+            lambda text: BeautifulSoup(text, features='html.parser').find('a', class_='featured-video-episode__title-link').attrs['href'],
             lambda val: 'https://www.voanoticias.com'+val,
             [Chats.mariposa]),
         Req('https://kernel.org/',
-            lambda text: BeautifulSoup(text, 'lxml').find('td', id='latest_link').text.strip(),
+            lambda text: BeautifulSoup(text, features='html.parser').find('td', id='latest_link').text.strip(),
             lambda val: 'kernel '+val+' released',
             [Chats.haxorz]),
-        Req('https://twitter.com/billwurtz',
-            lambda text: BeautifulSoup(text, 'html5lib').find('p', class_='tweet-text').text,
+        Req('https://mobile.twitter.com/deepleffen',
+            lambda text: BeautifulSoup(text, features='html.parser').find('div', class_='tweet-text').text,
             lambda val: val,
             [Chats.haxorz])
     ]
