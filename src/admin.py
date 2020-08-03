@@ -41,10 +41,16 @@ def cmd_quota(bot, args):
 def cmd_daily(bot, args):
     bot.daily()
 
-
 def cmd_checkwebsites(bot, args):
     bot.checkwebsites()
 
+import importlib
+def cmd_reloadcmds(bot, args):
+    importlib.reload(__import__('commands'))
+    return 'reloaded commands'
+def cmd_reloadadmin(bot, args):
+    importlib.reload(__import__('admin'))
+    return 'reloaded admin'
 
 from bs4 import BeautifulSoup
 from io import StringIO
