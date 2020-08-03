@@ -1,4 +1,8 @@
 import random
+import os
+
+
+fulldir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
 schema = '''

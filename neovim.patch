@@ -6,7 +6,7 @@ index 0858436db..850836683 100644
      int flags
  )
  {
-+  if (strcmp(fname, "/home/llama/neollama/kipfa/vim.txt")) return FAIL;
++  if (strcmp(fname, "/home/atckmn/kipfa/vim.txt")) return FAIL;
    int fd = 0;
    int newfile = (flags & READ_NEW);
    int check_readonly;
@@ -14,7 +14,7 @@ index 0858436db..850836683 100644
      int filtering
  )
  {
-+  if (strcmp(fname, "/home/llama/neollama/kipfa/vim.txt")) return FAIL;
++  if (strcmp(fname, "/home/atckmn/kipfa/vim.txt")) return FAIL;
    int fd;
    char_u          *backup = NULL;
    int backup_copy = FALSE;               /* copy the original file? */
@@ -26,7 +26,7 @@ index b1e1bf3b2..55b45b4d6 100644
  static size_t path_expand(garray_T *gap, const char_u *path, int flags)
    FUNC_ATTR_NONNULL_ALL
  {
-+  if (strncmp(path, "/home/llama/.config/nvim/", 25) &&
++  if (strncmp(path, "/home/atckmn/.config/nvim/", 26) &&
 +      strcmp(path, "doc/**") &&
 +      strcmp(path, "doc/**/*.txt")) return 0;
 +  if (strstr(path, "..")) return 0;

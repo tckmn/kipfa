@@ -450,8 +450,9 @@ def cmd_vim(self, msg, args, stdin):
     Places input in a file, evaluates argument as vim keystrokes, then returns
     the result.
     '''
-    with open('vim.txt', 'w') as f:
-        f.write(stdin)
+    with open('vim.txt', 'w') as f: f.write(stdin)
+    env = os.environ.copy()
+    env['VIMRUNTIME'] = data.fulldir + '/tools/neovim/runtime'
     print(subprocess.run(['timeout', '2',
         'tools/neovim/build/bin/nvim',
         '-Z',
@@ -461,7 +462,7 @@ def cmd_vim(self, msg, args, stdin):
                 .replace('\\', '\\\\') \
                 .replace('"', r'\"') \
                 .replace('<esc>', r'\<esc>') if args else ''),
-        '/home/llama/neollama/kipfa/vim.txt']))
+        data.fulldir + '/vim.txt'], env=env))
     with open('vim.txt', 'r') as f:
         stdin = f.read()
     os.remove('vim.txt')
