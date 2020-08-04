@@ -7,7 +7,7 @@ def now(): return datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(mytz)
 def parse(s): return datetime.fromtimestamp(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timestamp(), pytz.utc).astimezone(mytz)
 def fellasleep(d): return not (5 < d.hour < 23)
 def diff(a, b): return (a - b) / timedelta(hours=1)
-def slept(a, b): return diff(a, b) > 4 and fellasleep(a)
+def slept(a, b): return diff(b, a) > 4 and fellasleep(a)
 
 def compute(lastonline, lastwokeup):
     if lastwokeup is None: return 'insufficient data (please wait 1 day cycle or less)'
