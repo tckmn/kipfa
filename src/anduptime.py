@@ -4,17 +4,19 @@ import pytz
 mytz = pytz.timezone('America/Chicago')
 
 def now(): return datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(mytz)
-def parse(s): return datetime.fromtimestamp(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timestamp(), pytz.utc).astimezone(mytz)
+def parse(x): return datetime.fromtimestamp(x, mytz)
 def fellasleep(d): return not (5 < d.hour < 23)
 def diff(a, b): return (a - b) / timedelta(hours=1)
 def slept(a, b): return diff(b, a) > 4 and fellasleep(a)
+
+def fmt(td): return str(timedelta(seconds=int(td.total_seconds() if type(td) is timedelta else td)))
 
 def compute(lastonline, lastwokeup):
     if lastwokeup is None: return 'insufficient data (please wait 1 day cycle or less)'
     cur = now()
     offlinehrs = 0 if lastonline is None else diff(cur, lastonline)
-    awaketime = str(cur - lastwokeup)
-    asleeptime = str(cur - lastonline)
+    awaketime = fmt(cur - lastwokeup)
+    asleeptime = 0 if lastonline is None else fmt(cur - lastonline)
 
     # if we've been online in the past half hour or couldn't have fallen asleep
     # when we were last online, assume we're awake
