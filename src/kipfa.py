@@ -53,6 +53,7 @@ class Bot:
         self.no_tools = []
         self.prefix = '!'
         self.quota = '(unknown)'
+        self.ratelimit = {}
         self.recog = sr.Recognizer()
         self.seguess = None
         self.soguess = None
@@ -188,7 +189,8 @@ class Bot:
             rmsg = self.get_reply(msg)
             buf = (rmsg.text or rmsg.caption) if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
-            self.reply(msg, parse.parse(self, txt[idx:], buf, msg, is_ext))
+            resp = parse.parse(self, txt[idx:], buf, msg, is_ext)
+            if resp is not None: self.reply(msg, resp)
 
         # wpm
         elif msg.from_user.id in self.wpm:
@@ -236,7 +238,8 @@ class Bot:
         print(update)
         self.process_message(update)
 
-    def daily(self):
+    def tick(self):
+        # dailies
         lt = time.localtime()
         for d in dailies:
             dailyid, hour, minute, msg, chat, dailied = d
@@ -245,3 +248,7 @@ class Bot:
                     self.client.send_message(chat, msg)
                     d[-1] = True
             else: d[-1] = False
+
+        # rate limiting cooldowns
+        for u in self.ratelimit:
+            if self.ratelimit[u] > 0: self.ratelimit[u] -= 1

@@ -16,10 +16,14 @@ def perm_check(cmd, userid):
 
 
 def parse(bot, txt, buf, msg, is_ext=False):
+    # silently ignore rate-limited users
+    if bot.ratelimit.get(msg.from_user.id, 0) >= commands.rate_threshold: return
+
     idx = 0
     part = ''
     parts = []
     parse = True
+    total_rate = 0
 
     while idx <= len(txt):
         if not parse:
@@ -36,11 +40,18 @@ def parse(bot, txt, buf, msg, is_ext=False):
                 return 'The command {} does not exist.'.format(cmd)
             if not perm_check(cmd, msg.from_user.id):
                 return 'You do not have permission to execute the {} command.'.format(cmd)
+            total_rate += commands.rate_penalty[int(commands.info[cmd]['weight'])]
             parts.append((getattr(commands, 'cmd_'+cmd), args))
             part = ''
         elif is_ext and txt[idx] == '\\': parse = False
         else: part += txt[idx]
         idx += 1
+
+    total_rate += bot.ratelimit.get(msg.from_user.id, 0)
+    if total_rate > commands.rate_threshold:
+        bot.ratelimit[msg.from_user.id] = commands.rate_threshold + 60
+        return '[rate limit exceeded, please wait at least 1min before sending additional commands]'
+    bot.ratelimit[msg.from_user.id] = total_rate
 
     res = ''
     for (func, args) in parts:

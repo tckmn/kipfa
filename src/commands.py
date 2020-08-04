@@ -780,3 +780,61 @@ def cmd_restart(self, msg, args, stdin):
     '''
     self.reply(msg, 'restarting...')
     os._exit(0)
+
+# weights:
+# (0) completely innocuous commands
+# (1) large output / otherwise annoying
+# (2) semi-heavy commands (cpu use, etc)
+# (3) heavy commands (network, etc)
+
+names, *info = map(str.split, '''
+command     weight
+Flypflap    0
+alias       0
+arslan      1
+bash        3
+bf          2
+choose      0
+commands    0
+ddg         3
+eval        0
+expand      0
+exteval     0
+extprefix   0
+feed        0
+flepflap    3
+flipflop    3
+frink       2
+getfeed     0
+getperm     0
+getshock    0
+help        0
+js          2
+leaderboard 0
+mma         2
+oeis        3
+perm        0
+prefix      0
+puzhist     1
+puzzle      1
+quote       2
+restart     0
+seguess     3
+shock       0
+soguess     3
+steno       2
+tgguess     2
+tio         3
+transcribe  2
+translate   3
+ttt         1
+unalias     0
+uptime      0
+vim         2
+wpm         0
+wump        1
+'''.strip().split('\n'))
+
+info = dict([cmd, dict(zip(names[1:], props))] for cmd, *props in info)
+rate_penalty = [1, 2, 4, 6]
+rate_threshold = 50
