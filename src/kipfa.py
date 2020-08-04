@@ -238,6 +238,9 @@ class Bot:
         print(update)
         self.process_message(update)
 
+    def ustatus(self, client, user):
+        print('ustatus', user.id, user.status, user.last_online_date if 'last_online_date' in user else 'whee')
+
     def tick(self):
         # dailies
         lt = time.localtime()

@@ -2,13 +2,14 @@
 
 import time
 from threading import Thread
-from pyrogram import Client, MessageHandler
+from pyrogram import Client, MessageHandler, UserStatusHandler
 import kipfa
 from util import *
 
 kipfa.client = Client('kipfa')
 bot = kipfa.Bot(kipfa.client)
 kipfa.client.add_handler(MessageHandler(bot.callback))
+kipfa.client.add_handler(UserStatusHandler(bot.ustatus))
 kipfa.client.start()
 kipfa.client.send_message(Chats.testing, 'bot started')
 
