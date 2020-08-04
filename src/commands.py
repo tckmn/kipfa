@@ -1,5 +1,5 @@
 from collections import Counter
-import datetime
+from datetime import *
 import json
 import os
 import random
@@ -18,6 +18,7 @@ import urllib
 import zlib
 
 from util import *
+import anduptime
 import data   # for langs (translate & co.)
 import parse  # for eval, exteval
 
@@ -79,7 +80,7 @@ def perm_add(rule, cmd, userid, duration):
 def perm_fmt(cmd):
     return '\n'.join('{} {} (expires {})'.format(
         row[0], usernamify(row[1]),
-        'never' if row[2] == INF else 'in ' + str(datetime.timedelta(seconds=row[2])))
+        'never' if row[2] == INF else 'in ' + str(timedelta(seconds=row[2])))
         for row in connect().execute('''
         SELECT rule, userid, duration - (julianday('now')-2440587.5)*86400.0
         FROM perm
@@ -203,9 +204,9 @@ def cmd_bash(self, msg, args, stdin):
 
 def cmd_uptime(self, msg, args, stdin):
     '''
-    Tells how long the bot has been running since its last restart.
+    Tells how long the bot and Andy have been running since their last restarts.
     '''
-    return str(datetime.timedelta(seconds=int(time.time() - self.starttime)))
+    return str(timedelta(seconds=int(time.time() - self.starttime))) + '\n\n' + anduptime.compute(self.lastonline, self.lastwokeup)
 
 def cmd_frink(self, msg, args, stdin):
     '''

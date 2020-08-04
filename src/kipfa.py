@@ -1,10 +1,12 @@
-import datetime
 import json
 import os
 import random
 import re
 import shutil
 import subprocess
+
+from datetime import *
+import pytz
 import time
 
 # pyrogram
@@ -19,6 +21,7 @@ import requests
 # local modules
 from util import *
 import admin
+import anduptime
 import commands
 import data
 import parse
@@ -49,6 +52,8 @@ class Bot:
         self.extprefix = '!!'
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.lastonline = None
+        self.lastwokeup = None
         self.no_meems = []
         self.no_tools = []
         self.prefix = '!'
@@ -239,12 +244,19 @@ class Bot:
         self.process_message(update)
 
     def ustatus(self, client, user):
-        print('ustatus', user.id, user.status, user.last_online_date if 'last_online_date' in user else 'whee')
+        if user.id == admin.userid:
+            if user.status == 'online':
+                now = anduptime.now()
+                if self.lastonline is not None and anduptime.slept(self.lastonline, now):
+                    self.lastwokeup = now
+                self.lastonline = None
+            elif user.status == 'offline':
+                self.lastonline = anduptime.parse(user.last_online_date)
 
     def tick(self):
         # dailies
         lt = time.localtime()
-        for d in dailies:
+        for d in self.dailies:
             dailyid, hour, minute, msg, chat, dailied = d
             if lt.tm_hour == hour and lt.tm_min == minute:
                 if not dailied:
