@@ -697,7 +697,7 @@ def cmd_arslan(self, msg, args, stdin):
     We are infinitely honored to be graced with these holy messages from the
     Lord himself, the almighty being known to man as Alex Arslan.
     '''
-    return random.choice(open('data/arslan.txt').read().split('\n|\n'))
+    return random.choice(open('data/arslan.txt').read().split('\n=====\n'))
 
 def cmd_choose(self, msg, args, stdin):
     '''
