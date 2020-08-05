@@ -18,7 +18,7 @@ while True:
     tick += 1
     try:
         time.sleep(1)
-        bot.tick()
+        bot.tick(tick)
         if tick % 300 == 0:
             thread = Thread(target=bot.checkwebsites)
             thread.start()

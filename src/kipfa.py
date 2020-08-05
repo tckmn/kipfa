@@ -74,14 +74,7 @@ class Bot:
         if not hasattr(self, 'tgguess'):    self.tgguess    = None
         if not hasattr(self, 'tioerr'):     self.tioerr     = ''
         if not hasattr(self, 'wpm'):        self.wpm        = dict()
-        self.enable_rewrite = True
-
-    def __setattr__(self, attr, val):
-        rewrite = hasattr(self, 'enable_rewrite') and attr in data.saveattrs and getattr(self, attr) != val
-        super().__setattr__(attr, val)
-        if rewrite:
-            with open('data/saveattrs', 'wb') as f:
-                pickle.dump(dict((a, getattr(self, a)) for a in data.saveattrs), f)
+        self.lastdump = None
 
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
@@ -268,7 +261,7 @@ class Bot:
             elif user.status == 'offline':
                 self.lastonline = anduptime.parse(user.last_online_date)
 
-    def tick(self):
+    def tick(self, tick):
         # dailies
         lt = time.localtime()
         for d in self.dailies:
@@ -282,3 +275,9 @@ class Bot:
         # rate limiting cooldowns
         for u in self.ratelimit:
             if self.ratelimit[u] > 0: self.ratelimit[u] -= 1
+
+        # saveattrs
+        attrs = pickle.dumps(dict((a, getattr(self, a)) for a in data.saveattrs))
+        if attrs != self.lastdump:
+            with open('data/saveattrs', 'wb') as f:
+                f.write(attrs)
