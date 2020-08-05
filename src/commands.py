@@ -206,8 +206,8 @@ def cmd_uptime(self, msg, args, stdin):
     '''
     Tells how long the bot and Andy have been running since their last restarts.
     '''
-    return (anduptime.fmt(time.time() - self.starttime) + '\n\n' +
-            anduptime.compute(self.lastonline, self.lastwokeup))
+    return ('kipfa: ' + anduptime.fmt(time.time() - self.starttime) + '\n\n' +
+            'tckmn: ' + anduptime.compute(self.lastonline, self.lastwokeup))
 
 def cmd_frink(self, msg, args, stdin):
     '''
