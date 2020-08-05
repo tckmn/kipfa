@@ -33,9 +33,9 @@ class Chats:
 # network
 import requests
 import kipfa
-def get(url):
+def get(url, headers={}):
     try:
-        return requests.get(url, timeout=3).text
+        return requests.get(url, timeout=3, headers=headers).text
     except requests.exceptions.Timeout:
         kipfa.client.send_message(Chats.testing, 'request timed out: ' + url)
         return None
