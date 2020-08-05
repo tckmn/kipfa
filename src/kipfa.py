@@ -266,7 +266,6 @@ class Bot:
                     self.lastwokeup = now
                 self.lastonline = None
             elif user.status == 'offline':
-                print(user.last_online_date)
                 self.lastonline = anduptime.parse(user.last_online_date)
 
     def tick(self):
