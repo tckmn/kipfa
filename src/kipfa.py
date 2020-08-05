@@ -74,9 +74,10 @@ class Bot:
         if not hasattr(self, 'tgguess'):    self.tgguess    = None
         if not hasattr(self, 'tioerr'):     self.tioerr     = ''
         if not hasattr(self, 'wpm'):        self.wpm        = dict()
+        self.enable_rewrite = True
 
     def __setattr__(self, attr, val):
-        rewrite = attr in data.saveattrs and getattr(self, attr) != val
+        rewrite = hasattr(self, 'enable_rewrite') and attr in data.saveattrs and getattr(self, attr) != val
         super().__setattr__(attr, val)
         if rewrite:
             with open('data/saveattrs', 'wb') as f:
