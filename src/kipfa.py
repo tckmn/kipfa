@@ -62,7 +62,8 @@ class Bot:
 
         # saved attributes
         try:
-            for k, v in pickle.load('data/saveattrs'): setattr(self, k, v)
+            with open('data/saveattrs', 'rb') as f:
+                for k, v in pickle.load(f): setattr(self, k, v)
         except: pass
         if not hasattr(self, 'extprefix'):  self.extprefix  = '!!'
         if not hasattr(self, 'lastwokeup'): self.lastwokeup = None
@@ -78,7 +79,8 @@ class Bot:
         rewrite = attr in data.saveattrs and getattr(self, attr) != val
         super().__setattr__(attr, val)
         if rewrite:
-            pickle.dump(dict((a, getattr(self, a)) for a in data.saveattrs), 'data/saveattrs')
+            with open('data/saveattrs', 'wb') as f:
+                pickle.dump(dict((a, getattr(self, a)) for a in data.saveattrs), f)
 
     def checkwebsites(self):
         if hasattr(self, 'feeds'):
