@@ -49,24 +49,35 @@ class Bot:
 
         self.chain = dict()
         self.dailies = []
-        self.extprefix = '!!'
         self.frink = subprocess.Popen('java -cp tools/frink/frink.jar:tools/frink SFrink'.split(),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.lastonline = None
-        self.lastwokeup = None
         self.no_meems = []
         self.no_tools = []
-        self.prefix = '!'
-        self.quota = '(unknown)'
         self.ratelimit = {}
         self.recog = sr.Recognizer()
-        self.seguess = None
-        self.soguess = None
         self.starttime = time.time()
-        self.tgguess = None
-        self.tioerr = ''
-        self.wpm = dict()
         self.wump = None
+
+        # saved attributes
+        try:
+            for k, v in pickle.load('data/saveattrs'): setattr(self, k, v)
+        except: pass
+        if not hasattr(self, 'extprefix'):  self.extprefix  = '!!'
+        if not hasattr(self, 'lastwokeup'): self.lastwokeup = None
+        if not hasattr(self, 'prefix'):     self.prefix     = '!'
+        if not hasattr(self, 'quota'):      self.quota      = '(unknown)'
+        if not hasattr(self, 'seguess'):    self.seguess    = None
+        if not hasattr(self, 'soguess'):    self.soguess    = None
+        if not hasattr(self, 'tgguess'):    self.tgguess    = None
+        if not hasattr(self, 'tioerr'):     self.tioerr     = ''
+        if not hasattr(self, 'wpm'):        self.wpm        = dict()
+
+    def __setattr__(self, attr, val):
+        rewrite = attr in data.saveattrs and getattr(self, attr) != val
+        super().__setattr__(attr, val)
+        if rewrite:
+            pickle.dump(dict((a, getattr(self, a)) for a in data.saveattrs), 'data/saveattrs')
 
     def checkwebsites(self):
         if hasattr(self, 'feeds'):

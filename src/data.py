@@ -51,6 +51,11 @@ CREATE TABLE IF NOT EXISTS dailies (
 );
 '''
 
+saveattrs = [
+    'extprefix', 'lastwokeup', 'prefix', 'quota', 'seguess', 'soguess',
+    'tgguess', 'tioerr', 'wpm'
+]
+
 
 usernames = {
     'beat-1+5': 'Matthew',
