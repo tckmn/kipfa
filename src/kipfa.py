@@ -63,7 +63,7 @@ class Bot:
         # saved attributes
         try:
             with open('data/saveattrs', 'rb') as f:
-                for k, v in pickle.load(f): setattr(self, k, v)
+                for k, v in pickle.load(f).items(): setattr(self, k, v)
         except: pass
         if not hasattr(self, 'extprefix'):  self.extprefix  = '!!'
         if not hasattr(self, 'lastwokeup'): self.lastwokeup = None
