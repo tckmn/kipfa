@@ -70,3 +70,8 @@ def latex(l, d):
         'openout_any=p openin_any=p shell_escape=f pdflatex a.tex </dev/null;' +
         'convert -density 200 -background white -alpha remove -bordercolor White -border 5x5 a.pdf a.png'
         ])
+
+import time
+def mnow(msg):
+    realnow = time.time()
+    return msg.date if abs(msg.date - realnow) > 1 else realnow

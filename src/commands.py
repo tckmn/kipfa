@@ -437,11 +437,13 @@ def cmd_wpm(self, msg, args, stdin):
     if uid in self.wpm:
         (start, end, n) = self.wpm[uid]
         del self.wpm[uid]
+        if end is None:
+            return "you literally didn't type anything"
         if start == end:
-            return "Please type for longer than a second."
+            return "please type for longer than that"
         return '{:.3f} WPM'.format(n / ((end - start) / 60.0) / 5)
     else:
-        self.wpm[uid] = (msg.date, msg.date, 0)
+        self.wpm[uid] = (mnow(msg), None, 0)
 
 def cmd_Flypflap(self, msg, args, stdin):
     '''

@@ -209,7 +209,7 @@ class Bot:
         elif msg.from_user.id in self.wpm:
             (start, end, n) = self.wpm[msg.from_user.id]
             n += len(msg.text) + 1
-            self.wpm[msg.from_user.id] = (start, msg.date, n)
+            self.wpm[msg.from_user.id] = (start, mnow(msg), n)
 
         # admin command processing
         if txt[:len(admin.prefix)] == admin.prefix and msg.from_user.id == admin.userid:
