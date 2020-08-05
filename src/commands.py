@@ -193,14 +193,14 @@ def cmd_expand(self, msg, args, stdin):
             if gerund: return 'rolling on the floor ' + gerund
         return ' '.join((prefix + ' meaningfulness what '.join(expand(s) for s in args.split('mfw'))).split())
 
-def cmd_bash(self, msg, args, stdin):
-    '''
-    Gives the highest voted out of 50 random bash.org quotes.
-    '''
-    resp = get('http://bash.org/?random1')
-    if resp is None: return '[timeout]'
-    quote = max(BeautifulSoup(resp, features='html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
-    return cf(quote)
+# def cmd_bash(self, msg, args, stdin):
+#     '''
+#     Gives the highest voted out of 50 random bash.org quotes.
+#     '''
+#     resp = get('http://bash.org/?random1')
+#     if resp is None: return '[timeout]'
+#     quote = max(BeautifulSoup(resp, features='html.parser').find_all('p', class_='quote'), key=lambda x: int(x.font.text)).next_sibling.text
+#     return cf(quote)
 
 def cmd_uptime(self, msg, args, stdin):
     '''
@@ -796,7 +796,6 @@ command     weight
 Flypflap    0
 alias       0
 arslan      1
-bash        3
 bf          2
 choose      0
 commands    0
