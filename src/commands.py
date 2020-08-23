@@ -50,7 +50,8 @@ def translate(text, sl, tl):
             'Ocp-Apim-Subscription-Key': open('data/key').read().strip(),
             'Ocp-Apim-Subscription-Region': 'canadacentral',
             'Content-Type': 'application/json'
-        }).text)[0]
+        }).text)
+    resp = resp[0] if type(resp) is list else resp
     return (resp['translations'][0]['text'], sl or resp['detectedLanguage']['language'])
 
 # permissions
