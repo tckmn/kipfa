@@ -37,6 +37,9 @@ def cmd_updateusers(bot, args):
 def cmd_quota(bot, args):
     return str(bot.quota)
 
+def cmd_pull(bot, args):
+    return cf(subprocess.run('git pull', stdout=subprocess.PIPE).stdout.decode('utf-8'))
+
 
 def cmd_daily(bot, args):
     bot.daily()
