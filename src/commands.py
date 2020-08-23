@@ -324,9 +324,9 @@ def cmd_flipflop(self, msg, args, stdin):
     [message]. If no language is specified, a random one will be chosen. See
     also: {prefix}translate, {prefix}flepflap
     '''
-    m = re.match(r'(\*)?([a-z-]*):', args)
+    m = re.match(r'(\*)?([A-Za-z-]*):', args)
     hist = []
-    tl = random.choice(list(data.langs.keys() - ['en']))
+    tl = random.choice(data.langsgood)
     if m:
         tl = m.group(2)
         args = args[args.find(':')+1:].strip()
@@ -355,13 +355,13 @@ def cmd_flepflap(self, msg, args, stdin):
     {prefix}flipflop
     '''
     args = args.replace('\n', ' ')
-    m = re.match(r'([0-9a-z- ]*):', args)
+    m = re.match(r'([0-9A-Za-z- ]*):', args)
     hist = []
     if m is None: m = '5'
     else:
         m = m.group(1)
         args = args[args.find(':')+1:].strip()
-    tls = [tl for x in m.split() for tl in (random.sample(list(data.langs.keys() - ['en']), int(x)) if x.isdigit() else [x])]
+    tls = [tl for x in m.split() for tl in (random.sample(data.langsgood, int(x)) if x.isdigit() else [x])]
     if len(tls) > 8:
         return "That's too many languages. You may provide a maximum of 8."
     if len(args) > 100:
