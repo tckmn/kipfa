@@ -42,12 +42,16 @@ def puzhist():
 
 # translation
 def translate(text, sl, tl):
-    resp = json.loads(requests.get('https://translate.yandex.net/api/v1.5/tr.json/translate', params={
-        'key': open('data/key').read().strip(),
-        'text': text.strip(),
-        'lang': sl+'-'+tl if sl else tl
-        }).text)
-    return (resp['text'][0], resp['lang'].split('-')[0])
+    resp = json.loads(requests.post('https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=es', params={
+            'api-version': '3.0',
+            'to': tl,
+            **({'from': sl} if sl else {})
+        }, data=json.dumps([{'text': text.strip()}]), headers={
+            'Ocp-Apim-Subscription-Key': open('data/key').read(),
+            'Ocp-Apim-Subscription-Region': 'canadacentral',
+            'Content-Type': 'application/json'
+        }).text)[0]
+    return (resp['translations'][0]['text'], resp['detectedLanguage']['language'])
 
 # permissions
 def perm_add(rule, cmd, userid, duration):
