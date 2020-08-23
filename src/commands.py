@@ -51,7 +51,7 @@ def translate(text, sl, tl):
             'Ocp-Apim-Subscription-Region': 'canadacentral',
             'Content-Type': 'application/json'
         }).text)[0]
-    return (resp['translations'][0]['text'], resp['detectedLanguage']['language'])
+    return (resp['translations'][0]['text'], sl or resp['detectedLanguage']['language'])
 
 # permissions
 def perm_add(rule, cmd, userid, duration):
