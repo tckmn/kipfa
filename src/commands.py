@@ -47,7 +47,7 @@ def translate(text, sl, tl):
             'to': tl,
             **({'from': sl} if sl else {})
         }, data=json.dumps([{'text': text.strip()}]), headers={
-            'Ocp-Apim-Subscription-Key': open('data/key').read(),
+            'Ocp-Apim-Subscription-Key': open('data/key').read().strip(),
             'Ocp-Apim-Subscription-Region': 'canadacentral',
             'Content-Type': 'application/json'
         }).text)[0]
