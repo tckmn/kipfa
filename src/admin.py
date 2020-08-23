@@ -39,7 +39,7 @@ def cmd_quota(bot, args):
 
 import subprocess
 def cmd_pull(bot, args):
-    return cf(subprocess.run('git pull', stdout=subprocess.PIPE).stdout.decode('utf-8'))
+    return cf(subprocess.run(['git', 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
 
 
 def cmd_daily(bot, args):
@@ -49,12 +49,12 @@ def cmd_checkwebsites(bot, args):
     bot.checkwebsites()
 
 import importlib
-def cmd_reloadcmds(bot, args):
-    importlib.reload(__import__('commands'))
-    return 'reloaded commands'
-def cmd_reloadadmin(bot, args):
-    importlib.reload(__import__('admin'))
-    return 'reloaded admin'
+def cmd_reload(bot, args):
+    if not args: return 'reload what?'
+    try:
+        importlib.reload(__import__(args))
+        return f'reloaded {args}'
+    except: return 'failed'
 
 from bs4 import BeautifulSoup
 from io import StringIO
