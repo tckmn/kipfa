@@ -42,7 +42,7 @@ def puzhist():
 
 # translation
 def translate(text, sl, tl):
-    resp = json.loads(requests.post('https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=es', params={
+    resp = json.loads(requests.post('https://api.cognitive.microsofttranslator.com/translate', params={
             'api-version': '3.0',
             'to': tl,
             **({'from': sl} if sl else {})
