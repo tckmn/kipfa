@@ -1,5 +1,6 @@
 from util import *
 import commands
+import admin
 
 
 def perm_check(cmd, userid):
@@ -17,7 +18,7 @@ def perm_check(cmd, userid):
 
 def parse(bot, txt, buf, msg, is_ext=False):
     # silently ignore rate-limited users
-    if bot.ratelimit.get(msg.from_user.id, 0) >= commands.rate_threshold: return
+    if msg.from_user.id != admin.userid and bot.ratelimit.get(msg.from_user.id, 0) >= commands.rate_threshold: return
 
     idx = 0
     part = ''
