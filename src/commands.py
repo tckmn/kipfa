@@ -739,7 +739,7 @@ from difflib import get_close_matches
 wordlist = [x[:-1] for x in open('/usr/share/dict/words').readlines()]
 def cmd_quote(self, msg, args, stdin):
     args = args or 'its a quote from lord palmerston about schlewswig holstein'
-    return re.sub(r"[a-zA-Z']", lambda m: (get_close_matches(m.group(0), random.sample(wordlist, 50000), 1)+[m.group(0)])[0], args)
+    return re.sub(r"[a-zA-Z']+", lambda m: (get_close_matches(m.group(0), random.sample(wordlist, 50000), 1)+[m.group(0)])[0], args)
 
 
 def cmd_alias(self, msg, args, stdin):
