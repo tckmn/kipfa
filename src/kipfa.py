@@ -142,7 +142,7 @@ class Bot:
     def get_reply(self, msg):
         return msg.reply_to_message if hasattr(msg, 'reply_to_message') else None
 
-    def reply(self, msg, txt, reply_msg=None):
+    def reply(self, msg, txt, *, reply_msg=None, **kwargs):
         print(txt)
         txt = txt.strip()
         if not txt: txt = '[reply empty]'
@@ -151,14 +151,14 @@ class Bot:
         elif len(txt) > 4096:
             fname = '/tmp/r' + str(random.random())[2:7] + '.txt'
             with open(fname, 'w') as f: f.write(txt)
-            self.client.send_document(msg.chat.id, fname, reply_to_message_id=reply_msg or msg.message_id)
+            self.client.send_document(msg.chat.id, fname, reply_to_message_id=reply_msg or msg.message_id, **{'parse_mode': None, **kwargs})
             os.remove(fname)
         else:
-            self.client.send_message(msg.chat.id, txt, reply_to_message_id=reply_msg or msg.message_id, parse_mode=None)
+            self.client.send_message(msg.chat.id, txt, reply_to_message_id=reply_msg or msg.message_id, **{'parse_mode': None, **kwargs})
 
-    def reply_photo(self, msg, path):
+    def reply_photo(self, msg, path, *, reply_msg=None, **kwargs):
         print(path)
-        self.client.send_photo(msg.chat.id, path, reply_to_message_id=msg.message_id)
+        self.client.send_photo(msg.chat.id, path, reply_to_message_id=reply_msg or msg.message_id, **{'parse_mode': None, **kwargs})
 
     def process_message(self, msg):
         if msg.from_user.id == 777000 and msg.text and msg.text[:10] == 'Login code': return
@@ -246,6 +246,7 @@ class Bot:
             for (pat, prob, mention, resp) in data.triggers:
                 if re.search(pat, txt) and random.random() < prob and (msg.mentioned or not mention):
                     self.reply(msg, resp(txt))
+                    return
 
     def callback(self, client, update):
         print(update)

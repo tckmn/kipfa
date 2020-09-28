@@ -51,6 +51,7 @@ def translate(text, sl, tl):
             'Ocp-Apim-Subscription-Region': 'canadacentral',
             'Content-Type': 'application/json'
         }).text)
+    print('translate: ' + repr(resp))
     resp = resp[0] if type(resp) is list else resp
     return (resp['translations'][0]['text'], sl or resp['detectedLanguage']['language'])
 
