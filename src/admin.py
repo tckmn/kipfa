@@ -145,13 +145,14 @@ def guids(url):
         return set(x.find('id').text for x in feed.findall('entry'))
 
 def cmd_initfeeds(bot, args):
+    rmprof = lambda s: None if 'staff_profile' in s else s
     bot.feeds = [
         Req('https://lichess.org/training/daily',
             lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
             lambda val: 'obtw new uotd',
             [Chats.haxorz]),
         Req('https://www.sjsreview.com/?s=',
-            lambda text: BeautifulSoup(text, features='html.parser').find('h2').find('a').attrs['href'].replace(' ', '%20'),
+            lambda text: rmprof(BeautifulSoup(text, features='html.parser').find('h2').find('a').attrs['href'].replace(' ', '%20')),
             lambda val: val,
             [Chats.schmett]),
         Req('https://www.voanoticias.com/radio-buenos-dias-america',
