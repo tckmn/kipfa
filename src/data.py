@@ -369,11 +369,11 @@ triggers = [
     (r'(?i)fuck you', 1, True, fu),
 
     (r'(?i)\bwhere (are|r) (you|u|y\'?all)\b|\bwhere (you|u|y\'?all) at\b',
-     0.5, False,
+     0.01, False,
      lambda _: 'NUMBERS NIGHT CLUB'),
 
     (r'(?i)mountain|\brock|cluster',
-     0.3, False,
+     0.01, False,
      lambda _: (random.choice([
          'aftershock', 'airlock', 'air lock', 'air sock', 'alarm clock',
          'antiknock', 'arawak', 'around the clock', 'atomic clock',
@@ -419,7 +419,7 @@ triggers = [
          ])).upper() + ' ' + ''.join(random.choice('˥˦˧˨˩') for _ in range(50))),
 
     (r'(?i)\bgo\b',
-     0.1, False,
+     0.01, False,
      lambda _: 'lol no generics')
 
 ]
