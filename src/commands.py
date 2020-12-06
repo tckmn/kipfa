@@ -465,7 +465,7 @@ def cmd_vim(self, msg, args, stdin):
     with open('vim.txt', 'w') as f: f.write(stdin)
     env = os.environ.copy()
     env['VIMRUNTIME'] = data.fulldir + '/tools/neovim/runtime'
-    print(subprocess.run(['timeout', '2',
+    print(subprocess.run(['timeout', '5',
         'tools/neovim/build/bin/nvim',
         '-Z',
         '-n',
