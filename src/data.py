@@ -361,7 +361,7 @@ np = lambda *_: random.choice([
     ])
 fu = lambda *_: ':('
 
-isprime = lambda n: f'{n} is{"" if all(n%x for x in range(2, int(n**0.5))) else " not"} prime'
+isprime = lambda n: f'{n} is{"" if n!=0 and n!=1 and all(n%x for x in range(2, int(n**0.5)+1)) else " not"} prime'
 
 triggers = [
 
