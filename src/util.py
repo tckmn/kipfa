@@ -44,6 +44,7 @@ def get(url, headers={}):
 import re
 def cf(s):
     return '```' + s.strip().replace('```', '`\u200b`\u200b`') + '```'
+withmd = lambda x: (x, {'parse_mode': 'markdown'})
 
 # latex
 import os

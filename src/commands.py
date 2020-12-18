@@ -295,7 +295,7 @@ def cmd_leaderboard(self, msg, args, stdin):
     '''
     data = sorted(Counter(puzhist()).items(), key=lambda x: -x[1])
     maxlen = max(len(x[0]) for x in data)
-    return cf('\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data))
+    return withmd(cf('\n'.join('{:<{}} {}'.format(a, maxlen, b) for a, b in data)))
 
 def cmd_translate(self, msg, args, stdin):
     '''
@@ -374,7 +374,7 @@ def cmd_flepflap(self, msg, args, stdin):
         (res2, sl2) = translate(res, tl, 'en')
         hist += [res2]
         args = res2
-    return (hist[-1], '\n'.join(hist[:-1]))
+    return (hist[-1], {'stderr': '\n'.join(hist[:-1])})
 
 soa = 'https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('
 soq = 'https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('
@@ -394,7 +394,7 @@ def cmd_soguess(self, msg, args, stdin):
                 qdata = json.loads(requests.get(soq.format(item['question_id'])).text)
                 self.soguess = qdata['items'][0]['tags']
                 self.quota = qdata['quota_remaining']
-                return 'Guess a tag!\n' + cf(pre.text)
+                return withmd('Guess a tag!\n' + cf(pre.text))
         # somehow no answers matched the criteria
         return 'Something went horribly wrong'
     else:
@@ -547,8 +547,8 @@ def cmd_mma(self, msg, args, stdin):
         '-c',
         'Developer`StartProtectedMode[];ToExpression["' + args.replace('\\', '\\\\').replace('"', '\\"') + '"]'], stdout=subprocess.PIPE)
     print(p.returncode)
-    return '3 second timeout reached.' if p.returncode == -9 else \
-            cf('\u200b'+(p.stdout.decode('utf-8') or '[no output]'))
+    return withmd('3 second timeout reached.' if p.returncode == -9 else \
+            cf('\u200b'+(p.stdout.decode('utf-8') or '[no output]')))
 
 def cmd_bf(self, msg, args, stdin):
     '''
@@ -624,7 +624,7 @@ def ttt_fmt(board):
         for i2 in range(0, 9, 3):
             s += ' '.join(''.join(x[i2:i2+3]) for x in board[i1:i1+3]) + '\n'
         s += '\n'
-    return cf(s)
+    return withmd(cf(s))
 
 def ttt_check(board):
     for i in range(3):

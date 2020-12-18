@@ -10,9 +10,9 @@ username = 'tckmn'
 
 def cmd_eval(bot, args):
     try:
-        return cf(repr(eval(args)))
+        return withmd(cf(repr(eval(args))))
     except Exception as e:
-        return cf(traceback.format_exc())
+        return withmd(cf(traceback.format_exc()))
 
 
 from pyrogram.api import types, functions
@@ -39,7 +39,7 @@ def cmd_quota(bot, args):
 
 import subprocess
 def cmd_pull(bot, args):
-    return cf(subprocess.run(['git', 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+    return withmd(cf(subprocess.run(['git', 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')))
 
 
 def cmd_daily(bot, args):
@@ -73,7 +73,7 @@ class Req:
             resp = get(self.url)
             return None if resp is None else self.query(resp)
         except:
-            __import__('kipfa').client.send_message(Chats.testing, cf(f'in req {self.url}:\n{traceback.format_exc()}'))
+            __import__('kipfa').client.send_message(Chats.testing, cf(f'in req {self.url}:\n{traceback.format_exc()}'), parse_mode='markdown')
             return None
     def go(self):
         newval = self.update()

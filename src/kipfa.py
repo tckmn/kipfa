@@ -202,8 +202,8 @@ class Bot:
             rmsg = self.get_reply(msg)
             buf = (rmsg.text or rmsg.caption) if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
-            resp = parse.parse(self, txt[idx:], buf, msg, is_ext)
-            if resp is not None: self.reply(msg, resp)
+            (resp, parse_mode) = parse.parse(self, txt[idx:], buf, msg, is_ext)
+            if resp is not None: self.reply(msg, resp, parse_mode=parse_mode)
 
         # wpm
         elif msg.from_user.id in self.wpm:
@@ -216,7 +216,9 @@ class Bot:
             cmd, *args = txt[len(admin.prefix):].split(' ', 1)
             cmd = 'cmd_' + cmd
             args = (args or [None])[0]
-            if hasattr(admin, cmd): self.reply(msg, getattr(admin, cmd)(self, args) or 'done')
+            if hasattr(admin, cmd):
+                (resp, parse_mode) = getattr(admin, cmd)(self, args)
+                self.reply(msg, resp or 'done', parse_mode=parse_mode)
             else: self.reply(msg, 'Unknown admin command.')
 
         if msg.chat.id not in self.no_tools:

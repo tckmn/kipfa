@@ -55,9 +55,11 @@ def parse(bot, txt, buf, msg, is_ext=False):
     bot.ratelimit[msg.from_user.id] = total_rate
 
     res = ''
+    parse_mode = None
     for (func, args) in parts:
         buf = func(bot, msg, buf if args is None else args, buf)
         if type(buf) == tuple:
-            res += buf[1] + '\n'
+            if 'stderr' in buf[1]: res += buf[1]['stderr'] + '\n'
+            if 'parse_mode' in buf[1]: parse_mode = buf[1]['parse_mode']
             buf = buf[0]
-    return res + buf
+    return (res + buf, parse_mode)
