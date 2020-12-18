@@ -217,7 +217,8 @@ class Bot:
             cmd = 'cmd_' + cmd
             args = (args or [None])[0]
             if hasattr(admin, cmd):
-                (resp, parse_mode) = getattr(admin, cmd)(self, args)
+                res = getattr(admin, cmd)(self, args)
+                (resp, parse_mode) = res if type(res) is tuple else (res, None)
                 self.reply(msg, resp or 'done', parse_mode=parse_mode)
             else: self.reply(msg, 'Unknown admin command.')
 
