@@ -244,8 +244,9 @@ class Bot:
         # check triggers
         if msg.chat.id not in self.no_meems:
             for (pat, prob, mention, resp) in data.triggers:
-                if re.search(pat, txt) and random.random() < prob and (msg.mentioned or not mention):
-                    self.reply(msg, resp(txt))
+                res = re.search(pat, txt)
+                if res and random.random() < prob and (msg.mentioned or not mention):
+                    self.reply(msg, resp(txt, res))
                     return
 
     def callback(self, client, update):
