@@ -218,8 +218,8 @@ class Bot:
             args = (args or [None])[0]
             if hasattr(admin, cmd):
                 res = getattr(admin, cmd)(self, args)
-                (resp, parse_mode) = res if type(res) is tuple else (res, None)
-                self.reply(msg, resp or 'done', parse_mode=parse_mode)
+                (resp, kwargs) = res if type(res) is tuple else (res, {})
+                self.reply(msg, resp or 'done', **kwargs)
             else: self.reply(msg, 'Unknown admin command.')
 
         if msg.chat.id not in self.no_tools:
