@@ -354,12 +354,12 @@ langs = {
 langsgood = [ "af", "ar", "bg", "bn", "bs", "ca", "zh-Hans", "cs", "cy", "da", "de", "el", "es", "et", "fa", "fi", "ht", "fr", "he", "hi", "hr", "hu", "id", "is", "it", "ja", "ko", "lt", "lv", "mt", "ms", "mww", "nl", "nb", "pl", "pt", "ro", "ru", "sk", "sl", "sr-Latn", "sv", "sw", "ta", "th", "tlh-Latn", "tr", "uk", "ur", "vi" ]
 
 
-np = lambda _, _: random.choice([
+np = lambda *_: random.choice([
     'no problem', 'np', 'you\'re welcome', 'my pleasure'
     ]) + ' ' + random.choice([
     '', 'friend', 'buddy', 'pal'
     ])
-fu = lambda _, _: ':('
+fu = lambda *_: ':('
 
 isprime = lambda n: f'{n} is{"" if all(n%x for x in range(2, int(n**0.5))) else " not"} prime'
 
@@ -372,11 +372,11 @@ triggers = [
 
     (r'(?i)\bwhere (are|r) (you|u|y\'?all)\b|\bwhere (you|u|y\'?all) at\b',
      0.01, False,
-     lambda _, _: 'NUMBERS NIGHT CLUB'),
+     lambda *_: 'NUMBERS NIGHT CLUB'),
 
     (r'(?i)mountain|\brock|cluster',
      0.01, False,
-     lambda _, _: (random.choice([
+     lambda *_: (random.choice([
          'aftershock', 'airlock', 'air lock', 'air sock', 'alarm clock',
          'antiknock', 'arawak', 'around the clock', 'atomic clock',
          'authorized stock', 'baby talk', 'bach', 'balk', 'ballcock',
@@ -422,7 +422,7 @@ triggers = [
 
     (r'(?i)\bgo\b',
      0.01, False,
-     lambda _, _: 'lol no generics'),
+     lambda *_: 'lol no generics'),
 
     (r'(?i)is (\d{1,10}) prime',
      1, False,
