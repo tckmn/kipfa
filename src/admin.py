@@ -147,10 +147,10 @@ def guids(url):
 def cmd_initfeeds(bot, args):
     rmprof = lambda s: None if 'staff_profile' in s else s
     bot.feeds = [
-        Req('https://lichess.org/training/daily',
-            lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
-            lambda val: 'obtw new uotd',
-            [Chats.haxorz]),
+        # Req('https://lichess.org/training/daily',
+        #     lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
+        #     lambda val: 'obtw new uotd',
+        #     [Chats.haxorz]),
         Req('https://www.sjsreview.com/?s=',
             lambda text: rmprof(BeautifulSoup(text, features='html.parser').find('h2').find('a').attrs['href'].replace(' ', '%20')),
             lambda val: val,
@@ -162,11 +162,11 @@ def cmd_initfeeds(bot, args):
         Req('https://kernel.org/',
             lambda text: BeautifulSoup(text, features='html.parser').find('td', id='latest_link').text.strip(),
             lambda val: 'kernel '+val+' released',
-            [Chats.haxorz]),
-        Req('https://mobile.twitter.com/deepleffen',
-            lambda text: BeautifulSoup(text, features='html.parser').find('div', class_='tweet-text').text,
-            lambda val: val,
             [Chats.haxorz])
+        # Req('https://mobile.twitter.com/deepleffen',
+        #     lambda text: BeautifulSoup(text, features='html.parser').find('div', class_='tweet-text').text,
+        #     lambda val: val,
+        #     [Chats.haxorz])
     ]
     feeds = dict()
     with connect() as conn:
