@@ -248,11 +248,11 @@ class Bot:
         if msg.chat.id not in self.no_meems:
 
             if txt.lower() == 'no u':
-                # jesus christ, this is just (txt <$> rmsg) <|> (text <$> chmsg) in haskell
+                # jesus christ, this is just (txt <$> rmsg) <|> (txt . last <$> chmsg) in haskell
                 rmsg = self.get_reply(msg)
                 rmsg = rmsg.txt if rmsg else rmsg
                 chmsg = self.chain.get(msg.chat.id)
-                chmsg = chmsg['text'] if chmsg else chmsg
+                chmsg = chmsg[-1]['txt'] if chmsg else chmsg
                 resp = rmsg or chmsg
                 if resp and ('u' in resp or 'U' in resp):
                     self.reply(msg, resp.replace('u', '').replace('U', ''))
