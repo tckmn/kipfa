@@ -246,6 +246,13 @@ class Bot:
 
         # check triggers
         if msg.chat.id not in self.no_meems:
+
+            if txt.lower() == 'no u':
+                rmsg = self.get_reply(msg) or self.chain.get(msg.chat.id)
+                if rmsg and ('u' in rmsg or 'U' in rmsg):
+                    self.reply(msg, rmsg.replace('u', '').replace('U', ''))
+                    return
+
             for (pat, prob, mention, resp) in data.triggers:
                 res = re.search(pat, txt)
                 if res and random.random() < prob and (msg.mentioned or not mention):
