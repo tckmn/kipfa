@@ -189,6 +189,17 @@ class Bot:
             ans = zendo.test(txt)
             if ans is not None: self.reply(msg, str(ans), reply_msg=-1)
 
+        if txt.lower() == 'no u':
+            # jesus christ, this is just (text <$> rmsg) <|> (txt . last <$> chmsg) in haskell
+            rmsg = self.get_reply(msg)
+            rmsg = rmsg.text if rmsg else rmsg
+            chmsg = self.chain.get(msg.chat.id)
+            chmsg = chmsg[-1]['txt'] if chmsg else chmsg
+            resp = rmsg or chmsg
+            if resp and ('u' in resp or 'U' in resp):
+                self.reply(msg, resp.replace('u', '').replace('U', ''))
+                return
+
         # chains
         chain = self.check_chain(msg)
         if msg.chat.id not in self.no_meems and chain:
@@ -246,17 +257,6 @@ class Bot:
 
         # check triggers
         if msg.chat.id not in self.no_meems:
-
-            if txt.lower() == 'no u':
-                # jesus christ, this is just (txt <$> rmsg) <|> (txt . last <$> chmsg) in haskell
-                rmsg = self.get_reply(msg)
-                rmsg = rmsg.txt if rmsg else rmsg
-                chmsg = self.chain.get(msg.chat.id)
-                chmsg = chmsg[-1]['txt'] if chmsg else chmsg
-                resp = rmsg or chmsg
-                if resp and ('u' in resp or 'U' in resp):
-                    self.reply(msg, resp.replace('u', '').replace('U', ''))
-                    return
 
             for (pat, prob, mention, resp) in data.triggers:
                 res = re.search(pat, txt)
