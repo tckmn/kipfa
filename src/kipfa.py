@@ -248,9 +248,14 @@ class Bot:
         if msg.chat.id not in self.no_meems:
 
             if txt.lower() == 'no u':
-                rmsg = self.get_reply(msg) or self.chain.get(msg.chat.id)
-                if rmsg and ('u' in rmsg or 'U' in rmsg):
-                    self.reply(msg, rmsg.replace('u', '').replace('U', ''))
+                # jesus christ, this is just (txt <$> rmsg) <|> (text <$> chmsg) in haskell
+                rmsg = self.get_reply(msg)
+                rmsg = rmsg.txt if rmsg else rmsg
+                chmsg = self.chain.get(msg.chat.id)
+                chmsg = chmsg['text'] if chmsg else chmsg
+                resp = rmsg or chmsg
+                if resp and ('u' in resp or 'U' in resp):
+                    self.reply(msg, resp.replace('u', '').replace('U', ''))
                     return
 
             for (pat, prob, mention, resp) in data.triggers:
