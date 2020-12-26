@@ -198,7 +198,6 @@ class Bot:
             resp = rmsg or chmsg
             if resp and ('u' in resp or 'U' in resp):
                 self.reply(msg, resp.replace('u', '').replace('U', ''))
-                return
 
         # chains
         chain = self.check_chain(msg)
