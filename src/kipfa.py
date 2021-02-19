@@ -212,8 +212,8 @@ class Bot:
             rmsg = self.get_reply(msg)
             buf = (rmsg.text or rmsg.caption) if rmsg else ''
             idx = len(self.extprefix) if is_ext else len(self.prefix)
-            (resp, parse_mode) = parse.parse(self, txt[idx:], buf, msg, is_ext)
-            if resp is not None: self.reply(msg, resp, parse_mode=parse_mode)
+            (resp, flags) = forcetuple(parse.parse(self, txt[idx:], buf, msg, is_ext))
+            if resp is not None: self.reply(msg, resp, parse_mode=flags.get('parse_mode'))
 
         # wpm
         elif msg.from_user.id in self.wpm:

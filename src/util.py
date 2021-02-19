@@ -46,6 +46,8 @@ def cf(s):
     return '```' + s.strip().replace('```', '`\u200b`\u200b`') + '```'
 withmd = lambda x: (x, {'parse_mode': 'markdown'})
 
+forcetuple = lambda x: x if type(x) is tuple else (x, {})
+
 # latex
 import os
 import subprocess

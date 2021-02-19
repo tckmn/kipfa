@@ -752,8 +752,12 @@ def cmd_alias(self, msg, args, stdin):
     '''
     if not args or '=' not in args:
         return 'Usage: {}alias [src]=[dest]'.format(self.prefix)
+    src, dest = args.split('=', 1)
+    builtins = s[4:] for s in globals() if s[:4] == 'cmd_'
+    if src in builtins:
+        return 'You cannot alias a builtin command.'
     with connect() as conn:
-        conn.execute('INSERT OR REPLACE INTO alias (src, dest) VALUES (?, ?)', args.split('=', 1))
+        conn.execute('INSERT OR REPLACE INTO alias (src, dest) VALUES (?, ?)', (src, dest))
         return 'Command successfully aliased.'
 
 def cmd_unalias(self, msg, args, stdin):
