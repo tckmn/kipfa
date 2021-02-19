@@ -38,9 +38,9 @@ def parse(bot, txt, buf, msg, is_ext=False):
             ''', {'s': part.strip()}).fetchone()[0]
             cmd, args = part.split(None, 1) if ' ' in part or '\n' in part else (part, None)
             if not hasattr(commands, 'cmd_'+cmd):
-                return 'The command {} does not exist.'.format(cmd)
+                return ('The command {} does not exist.'.format(cmd), None)
             if not perm_check(cmd, msg.from_user.id):
-                return 'You do not have permission to execute the {} command.'.format(cmd)
+                return ('You do not have permission to execute the {} command.'.format(cmd), None)
             total_rate += commands.rate_penalty[int(commands.info[cmd]['weight'])]
             parts.append((getattr(commands, 'cmd_'+cmd), args))
             part = ''
@@ -51,7 +51,7 @@ def parse(bot, txt, buf, msg, is_ext=False):
     total_rate += bot.ratelimit.get(msg.from_user.id, 0)
     if total_rate > commands.rate_threshold:
         bot.ratelimit[msg.from_user.id] = commands.rate_threshold + 60
-        return '[rate limit exceeded, please wait at least 1min before sending additional commands]'
+        return ('[rate limit exceeded, please wait at least 1min before sending additional commands]', None)
     bot.ratelimit[msg.from_user.id] = total_rate
 
     res = ''
