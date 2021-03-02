@@ -38,9 +38,9 @@ def parse(bot, txt, buf, msg, is_ext=False):
             ''', {'s': part.strip()}).fetchone()[0]
             cmd, args = part.split(None, 1) if ' ' in part or '\n' in part else (part, None)
             if not hasattr(commands, 'cmd_'+cmd):
-                return 'The command {} does not exist.'
+                return f'The command {cmd} does not exist.'
             if not perm_check(cmd, msg.from_user.id):
-                return 'You do not have permission to execute the {} command.'
+                return f'You do not have permission to execute the {cmd} command.'
             total_rate += commands.rate_penalty[int(commands.info[cmd]['weight'])]
             parts.append((getattr(commands, 'cmd_'+cmd), args))
             part = ''
