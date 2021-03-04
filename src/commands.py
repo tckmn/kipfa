@@ -430,9 +430,11 @@ def cmd_ddg(self, msg, args, stdin):
     resp = get('https://duckduckgo.com/html/?q=' + urllib.parse.quote(args),
                headers={'User-Agent': 'curl/7.70.0'})
     if resp is None: return '[timeout]'
-    res = BeautifulSoup(resp, features='html.parser').find('div', class_='web-result')
-    link = urllib.parse.unquote(res.find('a').attrs['href'][31:])
-    return link if link else 'No results.'
+    try:
+        href = BeautifulSoup(resp, features='html.parser').find('div', class_='web-result').find('a').attrs['href']
+        return urllib.parse.parse_qs(urllib.parse.urlparse(href).query)['uddg'][0]
+    except:
+        return 'no results'
 
 def cmd_wpm(self, msg, args, stdin):
     '''
