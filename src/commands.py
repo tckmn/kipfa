@@ -712,7 +712,8 @@ def cmd_arslan(self, msg, args, stdin):
     Lord himself, the almighty being known to man as Alex Arslan.
     '''
     f = lambda s: re.sub('[^a-z]', '', s.lower())
-    return random.choice([ars for ars in open('data/arslan.txt').read().split('\n=====\n') if not args or f(args) in f(ars)])
+    arses = open('data/arslan.txt').read().split('\n=====\n')
+    return random.choice([ars for ars in arses if f(args) in f(ars)] or arses if args else arses)
 
 def cmd_choose(self, msg, args, stdin):
     '''
