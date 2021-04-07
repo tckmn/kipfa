@@ -57,34 +57,9 @@ saveattrs = [
 ]
 
 
-usernames = {
-    'beat-1+5': 'Matthew',
-    'The Arsenal': 'Arslan',
-    '\\"blund:\\"\\"': 'Dhilan',
-    '\\"ishan*tro': 'Daniel',
-    'point_only)': 'Ishan',
-    "alcohol'": 'Sebastian'
-}
-
 def init_tgguess():
-    with open('data/db.json') as f:
-        things = []
-        username = None
-        for line in f:
-            if line.startswith('   "from": "'):
-                username = line[12:-3]
-            if line.startswith('   "forwarded_from": "'):
-                username += '/' + line[22:-3]
-            if line.startswith('   "text": "') and len(line[12:-2]) > 5 and line[12:-2].count(' ') > 1:
-                things.append((line[12:-2].replace('\\"', '"').replace('\\n', '\n'), username))
-        dups = set()
-        seen = set()
-        for (text, username) in things:
-            if text in seen:
-                dups.add(text)
-            else:
-                seen.add(text)
-        return [(t,u) for (t,u) in things if t not in dups]
+    with open('data/tgguess') as f:
+        return [tuple(line.split('|',1)) for line in f]
 
 
 sites = [

@@ -14,7 +14,7 @@ pip dependencies: SpeechRecognition pycairo Pyrogram requests tgcrypto beautiful
 
 files not included in repo:
 data/arslan.txt     arslan copypastae
-data/db.json        telegram history export
+data/tgguess        telegram history export in nicer format
 data/key            yandex key
 src/puzzle.py       puzzles
 src/zendo.py        zendo puzzles
