@@ -729,7 +729,7 @@ def cmd_tgguess(self, msg, args, stdin):
         self.tgguess = None
         return ', forwarded from '.join(data.usernames[x] if x in data.usernames else x for x in ret)
     if not hasattr(self, 'tgarr'): self.tgarr = data.init_tgguess()
-    (text, username) = random.choice(self.tgarr)
+    (username, text) = random.choice(self.tgarr)
     self.tgguess = username
     return text
 
