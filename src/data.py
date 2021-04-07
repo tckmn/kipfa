@@ -71,12 +71,12 @@ def init_tgguess():
         things = []
         username = None
         for line in f:
-            if line.startswith('    "from": "'):
-                username = line[13:-3]
-            if line.startswith('    "forwarded_from": "'):
-                username += '/' + line[23:-3]
-            if line.startswith('    "text": "') and len(line[13:-2]) > 5 and line[13:-2].count(' ') > 1:
-                things.append((line[13:-2].replace('\\"', '"').replace('\\n', '\n'), username))
+            if line.startswith('   "from": "'):
+                username = line[12:-3]
+            if line.startswith('   "forwarded_from": "'):
+                username += '/' + line[22:-3]
+            if line.startswith('   "text": "') and len(line[12:-2]) > 5 and line[12:-2].count(' ') > 1:
+                things.append((line[12:-2].replace('\\"', '"').replace('\\n', '\n'), username))
         dups = set()
         seen = set()
         for (text, username) in things:
