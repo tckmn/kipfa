@@ -725,9 +725,9 @@ def cmd_choose(self, msg, args, stdin):
 
 def cmd_tgguess(self, msg, args, stdin):
     if self.tgguess is not None:
-        ret = self.tgguess.split('/')
+        ret = self.tgguess
         self.tgguess = None
-        return ', forwarded from '.join(data.usernames[x] if x in data.usernames else x for x in ret)
+        return ret.replace('/', ', forwarded from ')
     if not hasattr(self, 'tgarr'): self.tgarr = data.init_tgguess()
     (username, text) = random.choice(self.tgarr)
     self.tgguess = username
