@@ -739,8 +739,10 @@ def cmd_oeis(self, msg, args, stdin):
     if resp['count'] == 0: return 'No results found.'
     res = resp['results'][0]
     q = ', '.join(map(str.strip, args.split(',')))
-    return '[A{0:06}](http://oeis.org/A{0:06}) {1} -- {2}'.format(res['number'], res['name'],
-            res['data'].replace(',', ', ').replace(q, '**'+q+'**'))
+    return withmd('[A{0:06}](http://oeis.org/A{0:06}) {1} -- {2}'.format(
+        res['number'],
+        res['name'],
+        res['data'].replace(',', ', ').replace(q, '**'+q+'**')))
 
 from difflib import get_close_matches
 wordlist = [x[:-1] for x in open('/usr/share/dict/words').readlines()]
