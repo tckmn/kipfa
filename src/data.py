@@ -230,7 +230,7 @@ sites = [
 ['bioinformatics.stackexchange.com', 1891],
 ['cseducators.stackexchange.com', 662],
 ['interpersonal.stackexchange.com', 3012],
-['augur.stackexchange.com', 339],
+# ['augur.stackexchange.com', 339],
 ['iota.stackexchange.com', 832],
 ['stellar.stackexchange.com', 878],
 ['conlang.stackexchange.com', 237],

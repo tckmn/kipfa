@@ -49,9 +49,9 @@ def parse(bot, txt, buf, msg, is_ext=False):
         idx += 1
 
     total_rate += bot.ratelimit.get(msg.from_user.id, 0)
-    if total_rate > commands.rate_threshold:
+    if msg.from_user.id != admin.userid and total_rate > commands.rate_threshold:
         bot.ratelimit[msg.from_user.id] = commands.rate_threshold + 60
-        return ('[rate limit exceeded, please wait at least 1min before sending additional commands]', None)
+        return ('[rate limit exceeded, please wait at least 1min before sending additional commands]', {})
     bot.ratelimit[msg.from_user.id] = total_rate
 
     res = ''

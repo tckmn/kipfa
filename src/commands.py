@@ -379,6 +379,25 @@ def cmd_flepflap(self, msg, args, stdin):
 soa = 'https://api.stackexchange.com/2.2/answers?page={}&pagesize=100&order=desc&sort=activity&site=stackoverflow&filter=!-.3J6_JIMYrq&key=Oij)9kWgsRogxL0fBwKdCw(('
 soq = 'https://api.stackexchange.com/2.2/questions/{}?order=desc&sort=activity&site=stackoverflow&filter=!4(YqzWIjDDMcfFBmP&key=Oij)9kWgsRogxL0fBwKdCw(('
 seq = 'https://api.stackexchange.com/2.2/questions?page={}&pagesize=100&order=desc&sort=activity&site={}&filter=!bA1d_KulCdCDHu&key=Oij)9kWgsRogxL0fBwKdCw(('
+backoffs = {}
+locks = {}
+import threading
+for bkey in ['soguess1', 'soguess2', 'seguess']: locks[bkey] = threading.Lock()
+
+def stackquery(bkey, url):
+    if backoffs.get(bkey, 0) > time.time():
+        return (f'{bkey} backoff set, wait {backoffs[bkey] - time.time():.3} seconds', None, None)
+    if locks[bkey].acquire(blocking=False):
+        try:
+            data = json.loads(requests.get(url).text)
+        finally:
+            locks[bkey].release()
+    else:
+        return (f'{bkey} lock set, wait until previous {bkey} finishes', None, None)
+    if 'backoff' in data:
+        backoffs[bkey] = time.time() + data['backoff']
+        return (None, f'{bkey} backoff: {data["backoff"]} seconds\n', data)
+    return (None, '', data)
 
 def cmd_soguess(self, msg, args, stdin):
     '''
@@ -387,16 +406,19 @@ def cmd_soguess(self, msg, args, stdin):
     see if you were right.
     '''
     if self.soguess is None:
-        data = json.loads(requests.get(soa.format(random.randint(1, 100000))).text)
+        err, extra1, data = stackquery('soguess1', soa.format(random.randint(1, 100000)))
+        if err: return err
+        if 'items' not in data: return f'{extra1}Weird API response: {json.dumps(data)}'
         for item in sorted(data['items'], key=lambda x: -x['score']):
             pre = BeautifulSoup(item['body'], features='html.parser').find('pre')
             if pre is not None and 10 < len(pre.text) < 500:
-                qdata = json.loads(requests.get(soq.format(item['question_id'])).text)
+                err, extra2, qdata = stackquery('soguess2', soq.format(item['question_id']))
+                if err: return f'{extra1}{err}'
                 self.soguess = qdata['items'][0]['tags']
                 self.quota = qdata['quota_remaining']
-                return withmd('Guess a tag!\n' + cf(pre.text))
+                return withmd(extra1 + extra2 + 'Guess a tag!\n' + cf(pre.text))
         # somehow no answers matched the criteria
-        return 'Something went horribly wrong'
+        return extra1 + 'Something went horribly wrong'
     else:
         resp = 'The correct tags were: ' + ', '.join(self.soguess)
         self.soguess = None
@@ -411,9 +433,11 @@ def cmd_seguess(self, msg, args, stdin):
     '''
     if self.seguess is None:
         [site, questions] = random.choice(data.sites)
-        resp = json.loads(requests.get(seq.format(random.randint(1, max(1, questions//100)), site)).text)
+        err, extra, resp = stackquery('seguess', seq.format(random.randint(1, max(1, questions//100)), site))
+        if err: return err
+        if 'items' not in resp: return f'{extra}Weird API repsonse: {json.dumps(resp)}'
         self.seguess = site
-        return 'Guess a site!\n' + html.unescape(random.choice([x['title'] for x in resp['items'] if x['score'] >= 0]))
+        return extra + 'Guess a site!\n' + html.unescape(random.choice([x['title'] for x in resp['items'] if x['score'] >= 0]))
     else:
         resp = 'The correct site was: ' + self.seguess
         self.seguess = None
@@ -730,7 +754,7 @@ def cmd_tgguess(self, msg, args, stdin):
         return ret.replace('/', ', forwarded from ')
     if not hasattr(self, 'tgarr'): self.tgarr = data.init_tgguess()
     (username, text) = random.choice(self.tgarr)
-    self.tgguess = username
+    self.tgguess = username.replace('Mark', 'Em')
     return text
 
 def cmd_oeis(self, msg, args, stdin):
