@@ -776,8 +776,9 @@ def cmd_quote(self, msg, args, stdin):
 
 
 def cmd_buffalo(self, msg, args, stdin):
-    fname = 'data/buffalo/' + random.choice(os.listdir('data/buffalo'))
-    self.reply_photo(msg, fname)
+    thing = random.choice(os.listdir('data/buffalo'))
+    fname = 'data/buffalo/' + thing
+    self.reply_photo(msg, fname, caption=thing[3:-4].replace('_', ' '))
 
 
 def cmd_alias(self, msg, args, stdin):
