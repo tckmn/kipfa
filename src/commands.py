@@ -845,6 +845,7 @@ Flypflap    0
 alias       0
 arslan      1
 bf          2
+buffalo     1
 choose      0
 commands    0
 ddg         3
