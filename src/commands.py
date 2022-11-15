@@ -751,6 +751,11 @@ def cmd_quote(self, msg, args, stdin):
     return re.sub(r"[a-zA-Z']+", lambda m: (get_close_matches(m.group(0), random.sample(wordlist, 50000), 1)+[m.group(0)])[0], args)
 
 
+def cmd_buffalo(self, msg, args, stdin):
+    fname = 'data/buffalo/' + random.choice(os.listdir('data/buffalo'))
+    self.reply_photo(msg, fname)
+
+
 def cmd_alias(self, msg, args, stdin):
     '''
     Creates a synonym for a given kipfa command. Usage: {prefix}alias
