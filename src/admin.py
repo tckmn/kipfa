@@ -109,6 +109,12 @@ class Feed:
             elif self.url == 'http://www.smbc-comics.com/rss.php':
                 try: text += ' ' + BeautifulSoup(item.find('description').text, features='html.parser').contents[1].contents[2]
                 except: pass
+            elif self.url == 'https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=fwotd':
+                text = item.find('guid').text
+                try:
+                    soup = BeautifulSoup(item.find('description').text, features='html.parser')
+                    text = soup.find(class_='headword').text + ' (' + soup.find(id='WOTD-rss-language').text + ')\n'
+                except: pass
             for x in self.send_feed(item.find('guid').text, text): yield x
     def send_atom(self, feed):
         for item in feed.findall('entry'):
