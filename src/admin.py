@@ -113,7 +113,7 @@ class Feed:
                 text = item.find('guid').text
                 try:
                     soup = BeautifulSoup(item.find('description').text, features='html.parser')
-                    text = soup.find(class_='headword').text + ' (' + soup.find(id='WOTD-rss-language').text + ')\n'
+                    text = soup.find(class_='headword').text + ' (' + soup.find(id='WOTD-rss-language').text + ')\n' + text
                 except: pass
             for x in self.send_feed(item.find('guid').text, text): yield x
     def send_atom(self, feed):
