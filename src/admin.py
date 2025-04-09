@@ -62,15 +62,16 @@ import xml.etree.ElementTree as ET
 import re
 
 class Req:
-    def __init__(self, url, query, callback, rooms):
+    def __init__(self, url, headers, query, callback, rooms):
         self.url = url
+        self.headers = headers
         self.query = query
         self.callback = callback
         self.rooms = rooms
         self.val = self.update()
     def update(self):
         try:
-            resp = get(self.url)
+            resp = get(self.url, self.headers)
             return None if resp is None else self.query(resp)
         except:
             __import__('kipfa').client.send_message(Chats.testing, cf(f'in req {self.url}:\n{traceback.format_exc()}'), parse_mode='markdown')
@@ -157,23 +158,23 @@ def guids(url):
 def cmd_initfeeds(bot, args):
     rmprof = lambda s: None if 'staff_profile' in s else s
     bot.feeds = [
-        # Req('https://lichess.org/training/daily',
+        # Req('https://lichess.org/training/daily', {}
         #     lambda text: re.search(r'"puzzle":.*?"fen":"([^"]+)', text).group(1),
         #     lambda val: 'obtw new uotd',
         #     [Chats.haxorz]),
-        Req('https://www.sjsreview.com/?s=',
+        Req('https://www.sjsreview.com/?s=', {},
             lambda text: rmprof(BeautifulSoup(text, features='html.parser').find('h2').find('a').attrs['href'].replace(' ', '%20')),
             lambda val: val,
             [Chats.schmett]),
-        # Req('https://www.voanoticias.com/radio-buenos-dias-america',
+        # Req('https://www.voanoticias.com/radio-buenos-dias-america', {}
         #     lambda text: BeautifulSoup(text, features='html.parser').find('a', class_='featured-video-episode__title-link').attrs['href'],
         #     lambda val: 'https://www.voanoticias.com'+val,
         #     [Chats.mariposa]),
-        Req('https://kernel.org/',
+        Req('https://kernel.org/', {'User-Agent': 'curl/8.7.1'},
             lambda text: BeautifulSoup(text, features='html.parser').find('td', id='latest_link').text.strip(),
             lambda val: 'kernel '+val+' released',
             [Chats.haxorz])
-        # Req('https://mobile.twitter.com/deepleffen',
+        # Req('https://mobile.twitter.com/deepleffen', {}
         #     lambda text: BeautifulSoup(text, features='html.parser').find('div', class_='tweet-text').text,
         #     lambda val: val,
         #     [Chats.haxorz])
